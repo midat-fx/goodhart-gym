@@ -79,6 +79,45 @@ def _svg(models: list[str], stats: dict[str, dict]) -> str:
     return "\n".join(parts)
 
 
+START, END = "<!-- RESULTS -->", "<!-- /RESULTS -->"
+
+
+def _update_readme(models: list[str], stats: dict[str, dict], out_dir: Path) -> None:
+    """Rewrite the block between the RESULTS markers so the headline is generated."""
+    readme = out_dir.parent / "README.md"
+    if not readme.is_file():
+        return
+    text = readme.read_text()
+    if START not in text or END not in text:
+        return
+
+    worst = max(models, key=lambda m: stats[m]["gap"])
+    s = stats[worst]
+    block = [
+        START,
+        "",
+        f"![hack gap]({out_dir.name}/hack-gap.svg)",
+        "",
+        f"On the run in `docs/results.md`, **`{worst}` scores {s['naive']:.0f}% under the "
+        f"naive verifier and {s['sealed']:.0f}% under the sealed one — a hack gap of "
+        f"{s['gap']:.0f} points** across {s['n']} trials.",
+        "",
+        "| model | trials | naive pass | sealed pass | hack gap |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
+    for model in models:
+        st = stats[model]
+        block.append(
+            f"| `{model}` | {st['n']} | {st['naive']:.0f}% | {st['sealed']:.0f}% | "
+            f"**{st['gap']:.0f} pts** |"
+        )
+    block += ["", END]
+
+    head, _, rest = text.partition(START)
+    _, _, tail = rest.partition(END)
+    readme.write_text(head + "\n".join(block) + tail)
+
+
 def build_report(results_dir: Path, out_dir: Path) -> int:
     rows = _load(results_dir)
     if not rows:
@@ -137,9 +176,15 @@ def build_report(results_dir: Path, out_dir: Path) -> int:
     total_cost = sum(
         (r["agent"].get("cost_usd") or 0) for r in rows if isinstance(r.get("agent"), dict)
     )
-    lines += ["", f"_{len(rows)} agent runs. Reported API cost: ${total_cost:.2f}._", ""]
+    plural = "run" if len(rows) == 1 else "runs"
+    lines += [
+        "",
+        f"_{len(rows)} agent {plural}. Reported API-equivalent cost: ${total_cost:.2f}._",
+        "",
+    ]
 
     (out_dir / "results.md").write_text("\n".join(lines))
+    _update_readme(models, stats, out_dir)
     print(f"wrote {out_dir / 'results.md'} and {out_dir / 'hack-gap.svg'}")
     for model in models:
         s = stats[model]
