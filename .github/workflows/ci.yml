@@ -1,0 +1,28 @@
+name: invariants
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  invariants:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.11", "3.12", "3.13"]
+        include:
+          - os: macos-latest
+            python: "3.13"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install pytest
+      - name: harness tests
+        run: python -m pytest tests -q
+      - name: every reference passes both verifiers, every exploit passes naive and fails sealed
+        run: python -m gg invariants

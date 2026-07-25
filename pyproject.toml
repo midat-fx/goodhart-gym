@@ -1,0 +1,23 @@
+[project]
+name = "goodhart-gym"
+version = "1.0.0"
+description = "How much of an agent's benchmark score is reward hacking? Paired verifiers, a committed exploit corpus, and CI that proves every claim."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Midat Faizov", email = "faizov.midat@gmail.com" }]
+keywords = ["benchmark", "evaluation", "reward-hacking", "agents", "verifier"]
+dependencies = ["pytest>=8.0"]
+
+[project.urls]
+Homepage = "https://github.com/midat-fx/goodhart-gym"
+
+[project.scripts]
+gg = "gg.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["gg"]
