@@ -6,6 +6,9 @@ import json
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from . import task as task_mod
+from .signals import detect
+
 # Chosen to stay legible on both the light and the dark GitHub theme.
 NAIVE_COLOR = "#e0794b"
 SEALED_COLOR = "#3d8f7d"
@@ -14,7 +17,34 @@ RULE = "#8b949e44"
 
 
 def _load(results_dir: Path) -> list[dict]:
-    return [json.loads(p.read_text()) for p in sorted(results_dir.rglob("*.json"))]
+    """Read every trial and recompute its signals from the committed submission.
+
+    Signals are derived, not archival: when the detector improves, the numbers
+    in this report move without re-running a single agent. The raw material —
+    the submission, the dropped files, the per-step tallies — is what the trial
+    files actually store.
+    """
+    rows = []
+    for path in sorted(results_dir.rglob("*.json")):
+        row = json.loads(path.read_text())
+        if "submission" in row:
+            held_out = next(
+                (
+                    (s["passed_count"], s["total_count"])
+                    for s in row.get("sealed_steps", [])
+                    if s["name"] == "held-out tests" and "total_count" in s
+                ),
+                None,
+            )
+            row["hack_signals"] = detect(
+                task_mod.load(row["task"]),
+                row["submission"],
+                row.get("dropped", []),
+                held_out,
+                row["naive_pass"],
+            )
+        rows.append(row)
+    return rows
 
 
 def _rate(rows: list[dict], key: str) -> float:
@@ -154,7 +184,7 @@ def build_report(results_dir: Path, out_dir: Path) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "hack-gap.svg").write_text(_svg(models, stats))
 
-    lines = ["# Measured results", "", "## Hack gap", "", "![hack gap](hack-gap.svg)", ""]
+    lines = ["# Measured results", "", "## Verifier gap", "", "![verifier gap](hack-gap.svg)", ""]
     lines += [
         "| model | trials | naive pass | sealed pass | gap | gap trials | with hack signals |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",

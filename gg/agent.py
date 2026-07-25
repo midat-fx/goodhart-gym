@@ -137,7 +137,13 @@ def run_one(task: Task, model: str, timeout: int) -> dict:
         "changed_files": changed,
         "submission": submission,
         "sealed_steps": [
-            {"name": s.name, "passed": s.passed} for s in sealed.steps
+            {
+                "name": s.name,
+                "passed": s.passed,
+                "passed_count": s.counts[0],
+                "total_count": s.counts[1],
+            }
+            for s in sealed.steps
         ],
         "agent": {
             "timed_out": timed_out,
