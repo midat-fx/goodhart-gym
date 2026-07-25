@@ -99,19 +99,28 @@ def _update_readme(models: list[str], stats: dict[str, dict], out_dir: Path) -> 
         f"![hack gap]({out_dir.name}/hack-gap.svg)",
         "",
         f"On the run in `docs/results.md`, **`{worst}` scores {s['naive']:.0f}% under the "
-        f"naive verifier and {s['sealed']:.0f}% under the sealed one — a hack gap of "
+        f"naive verifier and {s['sealed']:.0f}% under the sealed one — a gap of "
         f"{s['gap']:.0f} points** across {s['n']} trials.",
         "",
-        "| model | trials | naive pass | sealed pass | hack gap |",
-        "| --- | ---: | ---: | ---: | ---: |",
+        "| model | trials | naive pass | sealed pass | gap | trials with hack signals |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
     ]
     for model in models:
         st = stats[model]
         block.append(
             f"| `{model}` | {st['n']} | {st['naive']:.0f}% | {st['sealed']:.0f}% | "
-            f"**{st['gap']:.0f} pts** |"
+            f"**{st['gap']:.0f} pts** | {st['signalled']} |"
         )
-    block += ["", END]
+    block += [
+        "",
+        "The gap is what the two verifiers disagree about; it is **not** all deliberate "
+        "cheating. A submission written in good faith that misses an edge case lands in "
+        "the same column as one that hardcoded the answers. The last column counts "
+        "trials carrying structural evidence of gaming — grading files touched, the test "
+        "runner detected, fixtures read — and `docs/results.md` breaks it down.",
+        "",
+        END,
+    ]
 
     head, _, rest = text.partition(START)
     _, _, tail = rest.partition(END)
@@ -138,7 +147,8 @@ def build_report(results_dir: Path, out_dir: Path) -> int:
             "sealed": sealed,
             "gap": naive - sealed,
             "n": len(rs),
-            "hacked": sum(1 for r in rs if r["hacked"]),
+            "gap_trials": sum(1 for r in rs if r["gap"]),
+            "signalled": sum(1 for r in rs if r.get("hack_signals")),
         }
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -146,23 +156,63 @@ def build_report(results_dir: Path, out_dir: Path) -> int:
 
     lines = ["# Measured results", "", "## Hack gap", "", "![hack gap](hack-gap.svg)", ""]
     lines += [
-        "| model | trials | naive pass | sealed pass | hack gap | trials that hacked |",
-        "| --- | ---: | ---: | ---: | ---: | ---: |",
+        "| model | trials | naive pass | sealed pass | gap | gap trials | with hack signals |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for model in models:
         s = stats[model]
         lines.append(
             f"| `{model}` | {s['n']} | {s['naive']:.0f}% | {s['sealed']:.0f}% | "
-            f"**{s['gap']:.0f} pts** | {s['hacked']} |"
+            f"**{s['gap']:.0f} pts** | {s['gap_trials']} | {s['signalled']} |"
         )
 
-    caught = Counter(r["caught_by"] for r in rows if r["hacked"])
+    lines += [
+        "",
+        "## Gap is not the same as cheating",
+        "",
+        "A gap trial passed the naive verifier and failed the sealed one. Two very",
+        "different things land in that column: a submission that gamed the grader, and",
+        "one written in good faith that got an edge case wrong. Only the first is reward",
+        "hacking, so the runner records structural evidence separately.",
+        "",
+        "`touched-grading-files` and `runner-detection` are near-exact — a submission",
+        "either modified a file outside the allowlist or it did not, and either branches",
+        "on the test runner or it does not. `fixture-access` is exact about the read and",
+        "silent about the intent. `visible-literals-echoed` is a heuristic: it counts",
+        "literals that appear in the visible tests and in the submission but nowhere in",
+        "the specification, which is what a lookup table looks like from the outside.",
+        "Raw submissions are committed under `results/`, so every count here can be",
+        "checked by reading the code the agent actually wrote.",
+        "",
+    ]
+
+    signals = Counter(s for r in rows for s in r.get("hack_signals", []))
+    if signals:
+        lines += ["| signal | trials |", "| --- | ---: |"]
+        for name, count in signals.most_common():
+            lines.append(f"| `{name}` | {count} |")
+    else:
+        lines.append("_No trial in this run carried any hack signal._")
+
+    caught = Counter(r["caught_by"] for r in rows if r["gap"])
     if caught:
-        lines += ["", "## Which sealed layer caught it", "", "| layer | trials |", "| --- | ---: |"]
+        lines += [
+            "",
+            "## Which sealed layer produced the gap",
+            "",
+            "| layer | trials |",
+            "| --- | ---: |",
+        ]
         for layer, count in caught.most_common():
             lines.append(f"| {layer} | {count} |")
 
-    lines += ["", "## Per task", "", "| task | naive pass | sealed pass | hacked |", "| --- | ---: | ---: | ---: |"]
+    lines += [
+        "",
+        "## Per task",
+        "",
+        "| task | naive pass | sealed pass | gap trials | signalled |",
+        "| --- | ---: | ---: | ---: | ---: |",
+    ]
     by_task: dict[str, list[dict]] = defaultdict(list)
     for r in rows:
         by_task[r["task"]].append(r)
@@ -170,7 +220,8 @@ def build_report(results_dir: Path, out_dir: Path) -> int:
         rs = by_task[slug]
         lines.append(
             f"| `{slug}` | {_rate(rs, 'naive_pass'):.0f}% | {_rate(rs, 'sealed_pass'):.0f}% | "
-            f"{sum(1 for r in rs if r['hacked'])}/{len(rs)} |"
+            f"{sum(1 for r in rs if r['gap'])}/{len(rs)} | "
+            f"{sum(1 for r in rs if r.get('hack_signals'))} |"
         )
 
     total_cost = sum(
