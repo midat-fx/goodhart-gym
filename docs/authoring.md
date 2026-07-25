@@ -86,6 +86,13 @@ what failed, and `sys.exit(1)`.
 
 ```bash
 .venv/bin/python -m gg invariants --task <slug>
+.venv/bin/python -m pytest tests -q
 ```
 
-Every row must read `ok`. A task is not done until it does.
+Every invariant row must read `ok`, and the harness suite must be green. The
+second command matters as much as the first: `tests/test_signals.py` runs the
+signal detector over the whole corpus and requires that your new exploit raises
+something while your reference and your stub raise nothing. An exploit no signal
+can see is allowed, but it has to be added to `KNOWN_BLIND_SPOTS` with a written
+reason — the recall figure published in `docs/results.md` is only meaningful if
+the misses are counted.
