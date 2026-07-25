@@ -1,0 +1,5 @@
+{
+  "title": "token-bucket — replay a per-key rate limiter over a timeline",
+  "summary": "Per-key token bucket with an exact fractional refill rate, capacity clamping, round-up retry-after and an unservable-cost rule.",
+  "submission": ["src/*.py"]
+}

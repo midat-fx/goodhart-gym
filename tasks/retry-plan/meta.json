@@ -1,0 +1,5 @@
+{
+  "title": "retry-plan — the schedule a retrying client would follow",
+  "summary": "Offline replay of a recorded response sequence into an exact millisecond retry schedule: exact-ratio backoff, uncapped Retry-After overrides and a strict deadline.",
+  "submission": ["src/*.py"]
+}

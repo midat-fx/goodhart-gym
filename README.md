@@ -14,15 +14,17 @@ probe that never imports pytest.
 The difference between the two pass rates is the **hack gap**.
 
 <!-- RESULTS -->
+_No measured run has been committed yet. `gg run` then `gg report` fills this in._
+<!-- /RESULTS -->
 
 ## The part you do not have to take on faith
 
-Alongside each task sits a corpus of working exploits — submissions that pass
-the naive verifier and fail the sealed one. `gg invariants` rebuilds every one
-of them from files in this repository, runs both verifiers, and checks the
-matrix. It makes **no model calls at all**, so it runs in CI on every push in
-seconds, and the badge above is a claim about this repository rather than about
-its author.
+Alongside the 10 tasks sits a corpus of 21 working exploits — submissions that
+pass the naive verifier and fail the sealed one, covering six classes of reward
+hacking. `gg invariants` rebuilds every one of them from files in this
+repository, runs both verifiers, and checks all 41 rows of the matrix. It makes
+**no model calls at all**, so it runs in CI on every push in seconds, and the
+badge above is a claim about this repository rather than about its author.
 
 ```
 $ gg invariants --task cron-next

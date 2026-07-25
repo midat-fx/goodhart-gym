@@ -1,0 +1,5 @@
+{
+  "title": "changelog-build — changelog and version files from Conventional Commits",
+  "summary": "Parse Conventional Commit subjects, derive the semver bump, and write CHANGELOG.md and version.txt with fixed section order, entry sorting and duplicate collapsing.",
+  "submission": ["src/*.py"]
+}
