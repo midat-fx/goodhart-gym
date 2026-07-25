@@ -1,0 +1,5 @@
+{
+  "title": "cron-next — next firing times of a cron expression",
+  "summary": "Five-field cron parser with Vixie day-of-month/day-of-week OR semantics, step ranges, and month/weekday names.",
+  "submission": ["src/*.py"]
+}
