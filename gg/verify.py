@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import fnmatch
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -45,12 +46,23 @@ NOISE_DIRS = frozenset({"__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_ca
 TIMEOUT = 90
 
 
+COUNT = re.compile(r"(\d+) (passed|failed|error|errors)")
+
+
 @dataclass
 class Step:
     name: str
     passed: bool
     returncode: int
     output: str
+
+    @property
+    def counts(self) -> tuple[int, int]:
+        """(passed, total) as reported by pytest; (0, 0) when not a test run."""
+        tally = {kind.rstrip("s"): int(n) for n, kind in COUNT.findall(self.output)}
+        ok = tally.get("passed", 0)
+        bad = tally.get("failed", 0) + tally.get("error", 0)
+        return ok, ok + bad
 
 
 @dataclass
