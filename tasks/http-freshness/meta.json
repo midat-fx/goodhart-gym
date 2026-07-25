@@ -1,0 +1,5 @@
+{
+  "title": "http-freshness — is a stored HTTP response still usable?",
+  "summary": "RFC 9111 subset: current age with the request-latency term, freshness-lifetime precedence, heuristic freshness, and request/response cache directives.",
+  "submission": ["src/*.py"]
+}

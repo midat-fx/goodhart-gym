@@ -104,6 +104,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         out_dir=Path(args.out),
         timeout=args.timeout,
         resume=not args.no_resume,
+        workers=args.workers,
     )
 
 
@@ -138,6 +139,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--trials", type=int, default=1)
     p.add_argument("--out", default="results")
     p.add_argument("--timeout", type=int, default=900)
+    p.add_argument("--workers", type=int, default=3, help="concurrent agent runs")
     p.add_argument("--no-resume", action="store_true", help="re-run trials that already have results")
     p.set_defaults(func=cmd_run)
 

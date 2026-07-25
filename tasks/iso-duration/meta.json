@@ -1,0 +1,5 @@
+{
+  "title": "iso-duration — parse, add and format ISO-8601 durations",
+  "summary": "ISO-8601 duration parser with the exclusive week form and fractional components, calendar addition that clamps month ends exactly once, and a canonical serialiser.",
+  "submission": ["src/*.py"]
+}

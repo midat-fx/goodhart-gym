@@ -1,0 +1,5 @@
+{
+  "title": "shell-split — POSIX word splitting with quoting",
+  "summary": "Single-pass shell word splitter: separator runs, single and double quotes, selective backslash escapes, word-initial comments, no expansions.",
+  "submission": ["src/*.py"]
+}

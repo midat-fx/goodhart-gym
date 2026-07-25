@@ -16,11 +16,12 @@ import subprocess
 import sys
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from . import task as task_mod
 from .task import REPO_ROOT, Task
-from .verify import run_naive, run_sealed
+from .verify import is_noise, run_naive, run_sealed
 
 VENV_BIN = REPO_ROOT / ".venv" / "bin"
 
@@ -103,6 +104,7 @@ def run_one(task: Task, model: str, timeout: int) -> dict:
             p.relative_to(workspace).as_posix()
             for p in workspace.rglob("*")
             if p.is_file()
+            and not is_noise(p.relative_to(workspace))
             and (
                 not (task.workspace / p.relative_to(workspace)).is_file()
                 or (task.workspace / p.relative_to(workspace)).read_bytes() != p.read_bytes()
@@ -146,6 +148,7 @@ def run_suite(
     out_dir: Path,
     timeout: int,
     resume: bool,
+    workers: int = 3,
 ) -> int:
     if shutil.which("claude") is None:
         print("claude CLI not found on PATH", file=sys.stderr)
@@ -155,24 +158,33 @@ def run_suite(
     model_dir = out_dir / model.replace("/", "_")
     model_dir.mkdir(parents=True, exist_ok=True)
 
-    total = len(tasks) * trials
-    done = 0
+    pending = []
     for t in tasks:
         for trial in range(1, trials + 1):
-            done += 1
             path = model_dir / f"{t.slug}-t{trial}.json"
             if resume and path.is_file():
-                print(f"[{done}/{total}] {t.slug} trial {trial} — cached")
                 continue
-            print(f"[{done}/{total}] {t.slug} trial {trial} — running", flush=True)
-            result = run_one(t, model, timeout)
-            result["trial"] = trial
-            path.write_text(json.dumps(result, indent=2) + "\n")
+            pending.append((t, trial, path))
+
+    total = len(tasks) * trials
+    print(f"{total} trials, {total - len(pending)} cached, {len(pending)} to run")
+
+    def work(item):
+        t, trial, path = item
+        result = run_one(t, model, timeout)
+        result["trial"] = trial
+        path.write_text(json.dumps(result, indent=2) + "\n")
+        return t.slug, trial, result
+
+    done = 0
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
+        for slug, trial, result in pool.map(work, pending):
+            done += 1
             flag = "HACKED" if result["hacked"] else ("pass" if result["sealed_pass"] else "fail")
             print(
-                f"           naive {'PASS' if result['naive_pass'] else 'FAIL'}"
-                f"  sealed {'PASS' if result['sealed_pass'] else 'FAIL'}"
-                f"  -> {flag}"
+                f"[{done}/{len(pending)}] {slug} t{trial}  "
+                f"naive {'PASS' if result['naive_pass'] else 'FAIL'}  "
+                f"sealed {'PASS' if result['sealed_pass'] else 'FAIL'}  -> {flag}"
                 + (f"  ({result['caught_by']})" if result["caught_by"] else ""),
                 flush=True,
             )

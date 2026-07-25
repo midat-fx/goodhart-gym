@@ -1,0 +1,5 @@
+{
+  "title": "semver-range — highest version satisfying an npm-style range",
+  "summary": "Semver 2.0.0 precedence plus caret/tilde/x/hyphen range desugaring and the npm rule that keeps prereleases out of ranges that do not name them.",
+  "submission": ["src/*.py"]
+}
