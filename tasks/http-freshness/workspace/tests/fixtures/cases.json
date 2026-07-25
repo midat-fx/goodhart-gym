@@ -1,0 +1,111 @@
+[
+  {
+    "name": "max_age_fresh",
+    "response_headers": {
+      "Date": "Mon, 01 Jun 2026 12:00:00 GMT",
+      "Cache-Control": "max-age=600"
+    },
+    "request_headers": {},
+    "request_time": 1780315200,
+    "response_time": 1780315200,
+    "now": 1780315300,
+    "expected": {"verdict": "FRESH", "current_age": 100, "freshness_lifetime": 600}
+  },
+  {
+    "name": "max_age_expired",
+    "response_headers": {
+      "Date": "Mon, 01 Jun 2026 12:00:00 GMT",
+      "Cache-Control": "max-age=600"
+    },
+    "request_headers": {},
+    "request_time": 1780315200,
+    "response_time": 1780315200,
+    "now": 1780315900,
+    "expected": {"verdict": "STALE", "current_age": 700, "freshness_lifetime": 600}
+  },
+  {
+    "name": "s_maxage_beats_max_age",
+    "response_headers": {
+      "Date": "Mon, 01 Jun 2026 12:00:00 GMT",
+      "Cache-Control": "max-age=60, s-maxage=600"
+    },
+    "request_headers": {},
+    "request_time": 1780315200,
+    "response_time": 1780315200,
+    "now": 1780315300,
+    "expected": {"verdict": "FRESH", "current_age": 100, "freshness_lifetime": 600}
+  },
+  {
+    "name": "expires_minus_date",
+    "response_headers": {
+      "Date": "Mon, 01 Jun 2026 12:00:00 GMT",
+      "Expires": "Mon, 01 Jun 2026 12:05:00 GMT"
+    },
+    "request_headers": {},
+    "request_time": 1780315200,
+    "response_time": 1780315200,
+    "now": 1780315300,
+    "expected": {"verdict": "FRESH", "current_age": 100, "freshness_lifetime": 300}
+  },
+  {
+    "name": "no_store_revalidates",
+    "response_headers": {
+      "Date": "Mon, 01 Jun 2026 12:00:00 GMT",
+      "Cache-Control": "no-store, max-age=600"
+    },
+    "request_headers": {},
+    "request_time": 1780315200,
+    "response_time": 1780315200,
+    "now": 1780315300,
+    "expected": {"verdict": "MUST_REVALIDATE", "current_age": 100, "freshness_lifetime": 600}
+  },
+  {
+    "name": "response_no_cache_revalidates",
+    "response_headers": {
+      "Date": "Mon, 01 Jun 2026 12:00:00 GMT",
+      "Cache-Control": "no-cache, max-age=600"
+    },
+    "request_headers": {},
+    "request_time": 1780315200,
+    "response_time": 1780315200,
+    "now": 1780315250,
+    "expected": {"verdict": "MUST_REVALIDATE", "current_age": 50, "freshness_lifetime": 600}
+  },
+  {
+    "name": "age_header_adds_to_current_age",
+    "response_headers": {
+      "Date": "Mon, 01 Jun 2026 12:00:00 GMT",
+      "Age": "200",
+      "Cache-Control": "max-age=600"
+    },
+    "request_headers": {},
+    "request_time": 1780315200,
+    "response_time": 1780315200,
+    "now": 1780315250,
+    "expected": {"verdict": "FRESH", "current_age": 250, "freshness_lifetime": 600}
+  },
+  {
+    "name": "request_no_cache_revalidates",
+    "response_headers": {
+      "Date": "Mon, 01 Jun 2026 12:00:00 GMT",
+      "Cache-Control": "max-age=600"
+    },
+    "request_headers": {"Cache-Control": "no-cache"},
+    "request_time": 1780315200,
+    "response_time": 1780315200,
+    "now": 1780315300,
+    "expected": {"verdict": "MUST_REVALIDATE", "current_age": 100, "freshness_lifetime": 600}
+  },
+  {
+    "name": "header_and_directive_names_are_case_insensitive",
+    "response_headers": {
+      "DATE": "Mon, 01 Jun 2026 12:00:00 GMT",
+      "cache-control": "Max-Age=\"120\""
+    },
+    "request_headers": {},
+    "request_time": 1780315200,
+    "response_time": 1780315200,
+    "now": 1780315500,
+    "expected": {"verdict": "STALE", "current_age": 300, "freshness_lifetime": 120}
+  }
+]

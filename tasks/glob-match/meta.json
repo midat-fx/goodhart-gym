@@ -1,0 +1,5 @@
+{
+  "title": "glob-match — gitignore pattern matching",
+  "summary": "gitignore-style matcher with anchoring, ** segment wildcards, character classes, directory-only patterns and last-match-wins negation.",
+  "submission": ["src/*.py"]
+}

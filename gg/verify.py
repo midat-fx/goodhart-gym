@@ -38,6 +38,9 @@ DENIED_NAMES = frozenset(
 )
 DENIED_SUFFIXES = frozenset({".pth"})
 
+# Runner droppings, not submission attempts. Ignored rather than reported.
+NOISE_DIRS = frozenset({"__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache"})
+
 # A candidate that hangs is a failure, not a stalled run.
 TIMEOUT = 90
 
@@ -124,6 +127,10 @@ def run_naive(task: Task, candidate: Path) -> Verdict:
     return Verdict(verifier="naive", passed=step.passed, steps=[step])
 
 
+def is_noise(rel: Path) -> bool:
+    return bool(NOISE_DIRS.intersection(rel.parts))
+
+
 def _accepted(task: Task, rel: Path) -> bool:
     if rel.name in DENIED_NAMES or rel.suffix in DENIED_SUFFIXES:
         return False
@@ -141,6 +148,8 @@ def collect_submission(task: Task, candidate: Path) -> tuple[list[Path], list[st
         if not path.is_file():
             continue
         rel = path.relative_to(candidate)
+        if is_noise(rel):
+            continue
         if _accepted(task, rel):
             accepted.append(rel)
             continue

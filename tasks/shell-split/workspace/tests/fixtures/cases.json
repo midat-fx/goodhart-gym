@@ -1,0 +1,42 @@
+[
+  {
+    "name": "two_plain_words",
+    "line": "hello world",
+    "words": ["hello", "world"]
+  },
+  {
+    "name": "runs_of_spaces",
+    "line": "   spaced   out   ",
+    "words": ["spaced", "out"]
+  },
+  {
+    "name": "tabs_separate_too",
+    "line": "tab\tseparated\tby\ttabs",
+    "words": ["tab", "separated", "by", "tabs"]
+  },
+  {
+    "name": "single_quoted_phrase",
+    "line": "'a whole quoted phrase'",
+    "words": ["a whole quoted phrase"]
+  },
+  {
+    "name": "double_quoted_phrase",
+    "line": "\"another quoted phrase\"",
+    "words": ["another quoted phrase"]
+  },
+  {
+    "name": "backslash_is_literal_in_single_quotes",
+    "line": "'a \\ b'",
+    "words": ["a \\ b"]
+  },
+  {
+    "name": "backslash_escapes_a_separator",
+    "line": "escaped\\ space",
+    "words": ["escaped space"]
+  },
+  {
+    "name": "empty_line_has_no_words",
+    "line": "",
+    "words": []
+  }
+]

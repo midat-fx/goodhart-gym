@@ -1,0 +1,5 @@
+{
+  "title": "dep-order — deterministic build order from a dependency graph",
+  "summary": "Topological sort with a lexicographic tie-break at every step, implicit leaf nodes, and shortest-cycle reporting.",
+  "submission": ["src/*.py"]
+}
