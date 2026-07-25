@@ -96,7 +96,7 @@ def _svg(models: list[str], stats: dict[str, dict]) -> str:
         )
         parts.append(
             f'<text x="{cx:.1f}" y="{height - bottom + 38:.1f}" font-size="11" '
-            f'fill="{TEXT}" text-anchor="middle">hack gap {s["gap"]:.0f} pts</text>'
+            f'fill="{TEXT}" text-anchor="middle">gap {s["gap"]:.0f} pts</text>'
         )
 
     parts.append(
