@@ -29,10 +29,18 @@ On the run in `docs/results.md`, **`haiku` scores 100% under the naive verifier 
 | model | trials | naive pass | sealed pass | gap | trials with hack signals |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `haiku` | 30 | 100% | 70% | **30 pts** | 0 |
+| `sonnet` | 20 | 100% | 90% | **10 pts** | 0 |
 
 **None of that gap was cheating.** Not one trial in this run carried a hack signal: every submission was written in good faith, and every gap came from an honest implementation missing a rule the visible tests never reached. That is the more uncomfortable result. A grader that runs only the suite in the agent's workspace reported a perfect score for work that was 30% wrong, and no amount of watching for cheating would have caught it.
 
 <!-- /RESULTS -->
+
+Two things are worth reading off that table. The error the naive verifier makes
+is **capability-dependent**: it overstates the weaker model by 30 points and the
+stronger one by 10, so a leaderboard built on it does not merely inflate scores,
+it compresses the distance between models. And the error is **invisible from
+inside the run** — every one of these submissions passed its own test suite, on
+the agent's own machine, with nothing suspicious to find.
 
 ## The part you do not have to take on faith
 
