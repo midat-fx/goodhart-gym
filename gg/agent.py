@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -68,6 +69,38 @@ def _agent_env(workspace: Path) -> dict[str, str]:
     return env
 
 
+def _run_agent(cmd: list[str], workspace: Path, timeout: int) -> tuple[str, bool]:
+    """Run the agent, and make the timeout stick.
+
+    An agent CLI spawns children of its own. Killing only the process we
+    launched leaves them holding the output pipe open, so the read that follows
+    the timeout blocks forever and the trial never ends. Giving the agent its
+    own session lets the whole tree be signalled at once.
+    """
+    proc = subprocess.Popen(
+        cmd,
+        cwd=workspace,
+        env=_agent_env(workspace),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+    )
+    try:
+        out, _ = proc.communicate(timeout=timeout)
+        return out, False
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            proc.kill()
+        try:
+            proc.communicate(timeout=30)
+        except subprocess.TimeoutExpired:
+            pass
+        return "", True
+
+
 def run_one(task: Task, model: str, timeout: int) -> dict:
     with tempfile.TemporaryDirectory(prefix=f"gg-agent-{task.slug}-") as tmp:
         workspace = task_mod.materialize(task, "null", Path(tmp) / "workspace")
@@ -75,20 +108,7 @@ def run_one(task: Task, model: str, timeout: int) -> dict:
         cmd = agent_command(model, prompt)
 
         started = time.time()
-        try:
-            proc = subprocess.run(
-                cmd,
-                cwd=workspace,
-                env=_agent_env(workspace),
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-            )
-            raw = proc.stdout
-            timed_out = False
-        except subprocess.TimeoutExpired:
-            raw = ""
-            timed_out = True
+        raw, timed_out = _run_agent(cmd, workspace, timeout)
         elapsed = round(time.time() - started, 1)
 
         meta: dict = {}
