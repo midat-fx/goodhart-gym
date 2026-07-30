@@ -128,6 +128,14 @@ python -m venv .venv && .venv/bin/pip install pytest
 .venv/bin/python -m gg invariants     # prove the corpus, no model calls
 ```
 
+Run the complete harness and invariant matrix in a clean container with no
+network access:
+
+```bash
+docker build -t goodhart-gym .
+docker run --rm --network none goodhart-gym
+```
+
 Score a workspace you produced yourself:
 
 ```bash
@@ -197,6 +205,9 @@ docs/          taxonomy, authoring guide, measured results
 results/       one JSON per trial, including the submission the agent wrote
 tests/         tests for the harness, and calibration for the signal detector
 ```
+
+The Docker image runs the 88 harness tests before the 41-row invariant matrix.
+The runtime needs no network, clock, model API, or host-specific fixture.
 
 New tasks follow `docs/authoring.md`. A task is done when
 `gg invariants --task <slug>` is green.
