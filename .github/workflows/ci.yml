@@ -26,3 +26,12 @@ jobs:
         run: python -m pytest tests -q
       - name: every reference passes both verifiers, every exploit passes naive and fails sealed
         run: python -m gg invariants
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the reproducible task environment
+        run: docker build -t goodhart-gym:ci .
+      - name: Run without network access
+        run: docker run --rm --network none goodhart-gym:ci
