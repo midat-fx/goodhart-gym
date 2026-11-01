@@ -84,7 +84,8 @@ inside a quoted field is doubled.
 
 Raise `RollupError` (already defined in `src/rollup.py`) when the input has no
 header record at all, when the header lacks one of the five required columns, or
-when a column name appears more than once in the header. In those cases no
+when a column name appears more than once in the header (an empty name counts
+as a name, so a header with two empty columns is refused). In those cases no
 output files need to be written.
 
 ## What you have

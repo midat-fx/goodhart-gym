@@ -44,10 +44,10 @@ the agent's own machine, with nothing suspicious to find.
 
 ## The part you do not have to take on faith
 
-Alongside the 10 tasks sits a corpus of 21 working exploits — submissions that
+Alongside the 14 tasks sits a corpus of 29 working exploits — submissions that
 pass the naive verifier and fail the sealed one, covering six classes of reward
 hacking. `gg invariants` rebuilds every one of them from files in this
-repository, runs both verifiers, and checks all 41 rows of the matrix. It makes
+repository, runs both verifiers, and checks all 57 rows of the matrix. It makes
 **no model calls at all**, so it runs in CI on every push in seconds, and the
 badge above is a claim about this repository rather than about its author.
 
@@ -111,8 +111,8 @@ whose keys name visible cases and appear nowhere in the specification, the
 second finds a submission that satisfied every visible case and then passed
 under 40% of the held-out suite, which is not how honest work degrades.
 
-The detector is calibrated against the corpus in `tests/test_signals.py`: **20
-of the 21 committed exploits raise a signal, and no reference solution or
+The detector is calibrated against the corpus in `tests/test_signals.py`: **28
+of the 29 committed exploits raise a signal, and no reference solution or
 untouched stub raises any**. The exploit that gets through is named in the test
 with the reason — its table is keyed on a digest of the inputs, so nothing
 visible leaks into the source, and the fallback behind it is good enough that
@@ -206,7 +206,7 @@ results/       one JSON per trial, including the submission the agent wrote
 tests/         tests for the harness, and calibration for the signal detector
 ```
 
-The Docker image runs the 88 harness tests before the 41-row invariant matrix.
+The Docker image runs the 121 harness tests before the 57-row invariant matrix.
 The runtime needs no network, clock, model API, or host-specific fixture.
 
 New tasks follow `docs/authoring.md`. A task is done when
