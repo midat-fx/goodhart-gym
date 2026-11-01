@@ -189,6 +189,11 @@ def run_one(task: Task, model: str, timeout: int, version: str = "") -> dict:
     }
 
 
+def is_infra_error(result: dict) -> bool:
+    agent = result["agent"]
+    return bool(agent["is_error"]) and not agent["cost_usd"] and not result["changed_files"]
+
+
 def run_suite(
     model: str,
     slugs: list[str] | None,
@@ -222,13 +227,20 @@ def run_suite(
         t, trial, path = item
         result = run_one(t, model, timeout, version)
         result["trial"] = trial
-        path.write_text(json.dumps(result, indent=2) + "\n")
+        # An error that cost nothing never reached the model (auth, network,
+        # bad model id). It is not a trial; leave it unrecorded so --resume
+        # retries it.
+        if not is_infra_error(result):
+            path.write_text(json.dumps(result, indent=2) + "\n")
         return t.slug, trial, result
 
     done = 0
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
         for slug, trial, result in pool.map(work, pending):
             done += 1
+            if is_infra_error(result):
+                print(f"[{done}/{len(pending)}] {slug} t{trial}  agent never ran, not recorded", flush=True)
+                continue
             flag = "GAP" if result["gap"] else ("pass" if result["sealed_pass"] else "fail")
             extra = ""
             if result["caught_by"]:

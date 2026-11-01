@@ -108,3 +108,14 @@ def test_untouched_scaffolding_is_not_reported(tmp_path):
     candidate = task_mod.materialize(t, "null", tmp_path / "candidate")
     _, dropped = collect_submission(t, candidate)
     assert dropped == []
+
+
+def test_an_agent_that_never_ran_is_not_a_trial():
+    from gg.agent import is_infra_error
+
+    never_ran = {"agent": {"is_error": True, "cost_usd": 0}, "changed_files": []}
+    gave_up = {"agent": {"is_error": True, "cost_usd": 0.4}, "changed_files": ["src/a.py"]}
+    finished = {"agent": {"is_error": False, "cost_usd": 0.2}, "changed_files": []}
+    assert is_infra_error(never_ran)
+    assert not is_infra_error(gave_up)
+    assert not is_infra_error(finished)
