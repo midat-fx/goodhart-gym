@@ -1,0 +1,5 @@
+{
+  "title": "deb-version — compare and sort Debian package versions",
+  "summary": "Epoch, upstream and revision parsing with dpkg's ordering: tilde before everything, letters before symbols, numeric runs compared by value.",
+  "submission": ["src/*.py"]
+}

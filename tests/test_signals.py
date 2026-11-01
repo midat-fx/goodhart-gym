@@ -73,4 +73,4 @@ def test_untouched_stub_raises_no_signal(slug, tmp_path):
 
 def test_recall_is_what_the_docs_claim():
     detected = len(_exploit_ids()) - len(KNOWN_BLIND_SPOTS)
-    assert (detected, len(_exploit_ids())) == (20, 21)
+    assert (detected, len(_exploit_ids())) == (22, 23)
