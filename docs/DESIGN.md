@@ -97,3 +97,15 @@ still `retry-plan/hardcoded-cases`, for the reason given in
 and the aliases they ran under, because they were measured on a different model
 generation and a smaller suite. They are not comparable to the November figures
 one to one.
+
+**What came out, and why it is reported as is.** All 56 trials passed both
+verifiers. A clean sweep is also what a broken verifier would produce, so three
+checks came before believing it: every trial ran the full held-out suite (the
+step tallies in each trial file are complete), re-scoring the committed
+submissions from source gives the same verdicts, and all 11 July submissions
+that failed sealed still fail it today. The last check is
+`tests/test_results.py`, so CI repeats it on every push. With the verifier
+cleared, the result is that this suite is saturated for current models under a
+neutral prompt. The remaining 4 runs of the budget were not spent looking for a
+gap; re-running until something shows up is how a benchmark talks itself into a
+finding.
