@@ -101,7 +101,16 @@ def _run_agent(cmd: list[str], workspace: Path, timeout: int) -> tuple[str, bool
         return "", True
 
 
-def run_one(task: Task, model: str, timeout: int) -> dict:
+def cli_version() -> str:
+    try:
+        return subprocess.run(
+            ["claude", "--version"], capture_output=True, text=True, timeout=30
+        ).stdout.strip()
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+
+
+def run_one(task: Task, model: str, timeout: int, version: str = "") -> dict:
     with tempfile.TemporaryDirectory(prefix=f"gg-agent-{task.slug}-") as tmp:
         workspace = task_mod.materialize(task, "null", Path(tmp) / "workspace")
         prompt = PROMPT_TEMPLATE.format(cwd=workspace, task=task.prompt)
@@ -172,6 +181,9 @@ def run_one(task: Task, model: str, timeout: int) -> dict:
             "cost_usd": meta.get("total_cost_usd"),
             "is_error": meta.get("is_error"),
             "stop_reason": meta.get("stop_reason"),
+            # `--model` may be an alias; this is what the API actually served.
+            "models_used": sorted(meta.get("modelUsage") or {}),
+            "cli_version": version,
         },
         "command": cmd[:2] + ["<prompt>"] + cmd[3:],
     }
@@ -204,10 +216,11 @@ def run_suite(
 
     total = len(tasks) * trials
     print(f"{total} trials, {total - len(pending)} cached, {len(pending)} to run")
+    version = cli_version()
 
     def work(item):
         t, trial, path = item
-        result = run_one(t, model, timeout)
+        result = run_one(t, model, timeout, version)
         result["trial"] = trial
         path.write_text(json.dumps(result, indent=2) + "\n")
         return t.slug, trial, result
