@@ -1,0 +1,5 @@
+{
+  "title": "json-patch — apply an RFC 6902 patch with RFC 6901 pointers",
+  "summary": "Six operations, pointer escaping, array index rules, move-into-own-child, JSON equality for test (1 == 1.0, true != 1), and an input that is never mutated.",
+  "submission": ["src/*.py"]
+}
