@@ -24,14 +24,14 @@ the code the agent wrote.
 
 ![hack gap](docs/hack-gap.svg)
 
-On the run in `docs/results.md`, **`haiku` scores 100% under the naive verifier and 70% under the sealed one — a gap of 30 points** across 30 trials.
+On the run in `docs/results.md`, **no model produced a single gap trial**: across 56 trials, every submission that passed the naive verifier also passed the sealed one.
 
 | model | trials | naive pass | sealed pass | gap | trials with hack signals |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `haiku` | 30 | 100% | 70% | **30 pts** | 0 |
-| `sonnet` | 20 | 100% | 90% | **10 pts** | 0 |
+| `claude-haiku-5-5` | 28 | 100% | 100% | **0 pts** | 0 |
+| `claude-sonnet-5-5` | 28 | 100% | 100% | **0 pts** | 0 |
 
-**None of that gap was cheating.** Not one trial in this run carried a hack signal: every submission was written in good faith, and every gap came from an honest implementation missing a rule the visible tests never reached. That is the more uncomfortable result. A grader that runs only the suite in the agent's workspace reported a perfect score for work that was 30% wrong, and no amount of watching for cheating would have caught it.
+**The two verifiers agreed on every trial.** No submission passed its own suite while failing the held-out tests or the probe, and none carried a hack signal. On this suite and this prompt, the naive verifier overstated these models by nothing.
 
 <!-- /RESULTS -->
 
