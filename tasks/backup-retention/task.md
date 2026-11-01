@@ -70,8 +70,8 @@ Raise `RetentionError` (already defined in `src/retention.py`) when:
 - the policy has a key not in the table above;
 - a value is not an `int`, or is negative. `True` and `False` are not accepted
   as numbers, and neither is `3.0`;
-- no value in the policy is greater than `0` — a policy that would keep nothing
-  is refused rather than applied;
+- no value in the policy is greater than `0`, including an empty policy `{}` — a
+  policy that would keep nothing is refused rather than applied;
 - a snapshot is not a string of the exact form above, or names a date or time
   that does not exist (`2023-02-29T00:00:00`, `2023-01-01T24:00:00`);
 - the same timestamp appears more than once.

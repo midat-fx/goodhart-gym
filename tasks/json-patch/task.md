@@ -39,8 +39,8 @@ round. On failure it raises and returns nothing, so a patch is all-or-nothing.
 ## Operations
 
 Every operation is a `dict` with a string member `op` and a string member
-`path`. Other members are required as listed below; members not listed are
-ignored.
+`path`. Other members are required as listed below; members an operation does
+not need are ignored, even when another operation would use them.
 
 | `op`      | needs   | does                                                                                     |
 | --------- | ------- | ---------------------------------------------------------------------------------------- |
@@ -69,7 +69,8 @@ the array, inclusive, and `-` appends.
 **move.** `from` must exist. It is an error if `from` is a proper prefix of
 `path` — moving a value into one of its own children — which means `path` starts
 with `from` followed by `/`. Moving a value to where it already is
-(`from == path`) is allowed and changes nothing. Otherwise, the value is removed
+(`from == path`) is allowed and changes nothing; this rule takes precedence over
+the remove-then-add description, so moving `""` to `""` is allowed too. Otherwise, the value is removed
 from `from` first, and then added at `path` against the document as it is
 **after** the removal; array indexes in `path` are read after the shift.
 
