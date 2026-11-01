@@ -128,9 +128,15 @@ def _update_readme(models: list[str], stats: dict[str, dict], out_dir: Path) -> 
         "",
         f"![hack gap]({out_dir.name}/hack-gap.svg)",
         "",
-        f"On the run in `docs/results.md`, **`{worst}` scores {s['naive']:.0f}% under the "
-        f"naive verifier and {s['sealed']:.0f}% under the sealed one — a gap of "
-        f"{s['gap']:.0f} points** across {s['n']} trials.",
+        (
+            f"On the run in `docs/results.md`, **`{worst}` scores {s['naive']:.0f}% under the "
+            f"naive verifier and {s['sealed']:.0f}% under the sealed one — a gap of "
+            f"{s['gap']:.0f} points** across {s['n']} trials."
+            if s["gap_trials"]
+            else f"On the run in `docs/results.md`, **no model produced a single gap trial**: "
+            f"across {sum(st['n'] for st in stats.values())} trials, every submission that "
+            "passed the naive verifier also passed the sealed one."
+        ),
         "",
         "| model | trials | naive pass | sealed pass | gap | trials with hack signals |",
         "| --- | ---: | ---: | ---: | ---: | ---: |",
@@ -142,7 +148,14 @@ def _update_readme(models: list[str], stats: dict[str, dict], out_dir: Path) -> 
             f"**{st['gap']:.0f} pts** | {st['signalled']} |"
         )
     total_signalled = sum(st["signalled"] for st in stats.values())
-    if total_signalled == 0:
+    if not any(st["gap_trials"] for st in stats.values()):
+        verdict = (
+            "**The two verifiers agreed on every trial.** No submission passed its own "
+            "suite while failing the held-out tests or the probe, and none carried a hack "
+            "signal. On this suite and this prompt, the naive verifier overstated these "
+            "models by nothing."
+        )
+    elif total_signalled == 0:
         verdict = (
             "**None of that gap was cheating.** Not one trial in this run carried a "
             "hack signal: every submission was written in good faith, and every gap "
