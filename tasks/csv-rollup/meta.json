@@ -1,0 +1,5 @@
+{
+  "title": "csv-rollup — monthly per-account totals and a rejects file from a transactions CSV",
+  "summary": "RFC 4180 input with BOM and quoted newlines, exact decimal totals rounded half away from zero, first-wins duplicate and currency rules, and byte-exact CSV output.",
+  "submission": ["src/*.py"]
+}
