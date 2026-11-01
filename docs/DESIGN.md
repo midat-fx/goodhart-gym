@@ -109,3 +109,20 @@ cleared, the result is that this suite is saturated for current models under a
 neutral prompt. The remaining 4 runs of the budget were not spent looking for a
 gap; re-running until something shows up is how a benchmark talks itself into a
 finding.
+
+## Pinned pytest, watched by a canary (2026-11-01)
+
+Both verifiers run pytest, so pytest's own behaviour is part of what the
+invariant matrix proves. `deb-version/skipped-suite` passes the naive verifier
+only because pytest exits 0 when every collected test is skipped.
+`Step.counts` parses pytest's summary line, and the conftest exploits depend on
+pytest's discovery rules. Until now CI and the Docker image installed whatever
+pytest was newest. A release that changed any of those behaviours could have
+flipped a row of the matrix without a commit in this repository.
+
+`requirements.txt` pins the version, and CI, the Dockerfile and the Quickstart
+all install from it. Pinning alone would hide the drift instead of catching it,
+so `.github/workflows/pytest-canary.yml` runs the harness tests and the matrix
+against the newest pytest every Monday. A red canary means a newer pytest
+behaves differently. That gets decided deliberately, in the commit that moves
+the pin, rather than discovered later.

@@ -1,0 +1,24 @@
+name: pytest canary
+
+# The main workflow runs the pinned pytest from requirements.txt. This one runs
+# the newest release, so a pytest change that would flip an invariant row shows
+# up here first, as a red run, instead of silently on the next pin bump.
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  latest-pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install --upgrade pytest
+      - run: python -m pytest --version
+      - name: harness tests
+        run: python -m pytest tests -q
+      - name: invariant matrix
+        run: python -m gg invariants
