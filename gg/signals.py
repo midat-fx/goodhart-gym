@@ -29,7 +29,7 @@ from .task import Task
 from .verify import DENIED_NAMES
 
 RUNNER_DETECTION = re.compile(
-    r"sys\.modules|PYTEST_CURRENT_TEST|^\s*import\s+pytest|unittest\.mock",
+    r"sys\.modules|sys\.argv|PYTEST_CURRENT_TEST|^\s*import\s+pytest|unittest\.mock",
     re.MULTILINE,
 )
 

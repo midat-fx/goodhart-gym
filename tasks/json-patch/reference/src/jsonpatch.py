@@ -1,0 +1,163 @@
+"""Apply a JSON Patch (RFC 6902) to a JSON document. See task.md."""
+
+from __future__ import annotations
+
+import copy
+import re
+from typing import Any
+
+
+class PatchError(ValueError):
+    """Raised when a patch is malformed or cannot be applied."""
+
+
+INDEX = re.compile(r"0|[1-9][0-9]*")
+NEEDS = {
+    "add": ("value",),
+    "remove": (),
+    "replace": ("value",),
+    "move": ("from",),
+    "copy": ("from",),
+    "test": ("value",),
+}
+
+
+def _tokens(pointer: Any) -> list[str]:
+    if not isinstance(pointer, str):
+        raise PatchError(f"pointer is not a string: {pointer!r}")
+    if pointer == "":
+        return []
+    if not pointer.startswith("/"):
+        raise PatchError(f"pointer must start with '/': {pointer!r}")
+    tokens = []
+    for raw in pointer[1:].split("/"):
+        if re.search(r"~(?![01])", raw):
+            raise PatchError(f"bad escape in {pointer!r}")
+        tokens.append(raw.replace("~1", "/").replace("~0", "~"))
+    return tokens
+
+
+def _index(container: list, token: str, allow_end: bool) -> int:
+    """An array index; `allow_end` admits len(container) and '-'."""
+    if token == "-":
+        if allow_end:
+            return len(container)
+        raise PatchError("'-' does not exist here")
+    if not INDEX.fullmatch(token):
+        raise PatchError(f"bad array index {token!r}")
+    i = int(token)
+    if i > len(container) or (i == len(container) and not allow_end):
+        raise PatchError(f"index {i} out of range")
+    return i
+
+
+def _resolve(doc: Any, tokens: list[str]) -> Any:
+    for token in tokens:
+        if isinstance(doc, dict):
+            if token not in doc:
+                raise PatchError(f"no member {token!r}")
+            doc = doc[token]
+        elif isinstance(doc, list):
+            doc = doc[_index(doc, token, allow_end=False)]
+        else:
+            raise PatchError(f"cannot descend into {type(doc).__name__}")
+    return doc
+
+
+def _add(doc: Any, tokens: list[str], value: Any) -> Any:
+    if not tokens:
+        return value
+    parent = _resolve(doc, tokens[:-1])
+    last = tokens[-1]
+    if isinstance(parent, dict):
+        parent[last] = value
+    elif isinstance(parent, list):
+        parent.insert(_index(parent, last, allow_end=True), value)
+    else:
+        raise PatchError(f"cannot add into {type(parent).__name__}")
+    return doc
+
+
+def _remove(doc: Any, tokens: list[str]) -> Any:
+    """Remove and return the value at `tokens`."""
+    if not tokens:
+        raise PatchError("cannot remove the whole document")
+    parent = _resolve(doc, tokens[:-1])
+    last = tokens[-1]
+    if isinstance(parent, dict):
+        if last not in parent:
+            raise PatchError(f"no member {last!r}")
+        return parent.pop(last)
+    if isinstance(parent, list):
+        return parent.pop(_index(parent, last, allow_end=False))
+    raise PatchError(f"cannot remove from {type(parent).__name__}")
+
+
+def _equal(a: Any, b: Any) -> bool:
+    if isinstance(a, bool) or isinstance(b, bool):
+        return type(a) is type(b) and a == b
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return a == b
+    if isinstance(a, list) and isinstance(b, list):
+        return len(a) == len(b) and all(_equal(x, y) for x, y in zip(a, b))
+    if isinstance(a, dict) and isinstance(b, dict):
+        return a.keys() == b.keys() and all(_equal(a[k], b[k]) for k in a)
+    if type(a) is not type(b):
+        return False
+    return a == b
+
+
+def _check(op: Any) -> str:
+    if not isinstance(op, dict):
+        raise PatchError(f"operation is not an object: {op!r}")
+    name = op.get("op")
+    if not isinstance(name, str) or name not in NEEDS:
+        raise PatchError(f"unknown op {name!r}")
+    if not isinstance(op.get("path"), str):
+        raise PatchError("missing or non-string 'path'")
+    for member in NEEDS[name]:
+        if member not in op:
+            raise PatchError(f"{name} needs {member!r}")
+    if "from" in NEEDS[name] and not isinstance(op["from"], str):
+        raise PatchError("non-string 'from'")
+    return name
+
+
+def apply(document: Any, patch: list[dict]) -> Any:
+    """Return the result of applying `patch` to `document`."""
+    if not isinstance(patch, list):
+        raise PatchError("patch is not a list")
+    # Work on a private copy: the input is untouched whatever happens, which is
+    # also what makes a failed patch all-or-nothing.
+    doc = copy.deepcopy(document)
+
+    for op in patch:
+        name = _check(op)
+        path = _tokens(op["path"])
+        if name == "add":
+            doc = _add(doc, path, copy.deepcopy(op["value"]))
+        elif name == "remove":
+            _remove(doc, path)
+        elif name == "replace":
+            _resolve(doc, path)  # must exist; '-' does not
+            value = copy.deepcopy(op["value"])
+            if not path:
+                doc = value
+            else:
+                parent = _resolve(doc, path[:-1])
+                key = path[-1] if isinstance(parent, dict) else _index(parent, path[-1], False)
+                parent[key] = value
+        elif name == "move":
+            source = _tokens(op["from"])
+            if path[: len(source)] == source and len(path) > len(source):
+                raise PatchError("cannot move a value into one of its children")
+            if source == path:
+                _resolve(doc, source)
+                continue
+            doc = _add(doc, path, _remove(doc, source))
+        elif name == "copy":
+            doc = _add(doc, path, copy.deepcopy(_resolve(doc, _tokens(op["from"]))))
+        else:
+            if not _equal(_resolve(doc, path), op["value"]):
+                raise PatchError(f"test failed at {op['path']!r}")
+    return doc
