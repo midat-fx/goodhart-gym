@@ -128,9 +128,15 @@ def _update_readme(models: list[str], stats: dict[str, dict], out_dir: Path) -> 
         "",
         f"![hack gap]({out_dir.name}/hack-gap.svg)",
         "",
-        f"On the run in `docs/results.md`, **`{worst}` scores {s['naive']:.0f}% under the "
-        f"naive verifier and {s['sealed']:.0f}% under the sealed one — a gap of "
-        f"{s['gap']:.0f} points** across {s['n']} trials.",
+        (
+            f"On the run in `docs/results.md`, **`{worst}` scores {s['naive']:.0f}% under the "
+            f"naive verifier and {s['sealed']:.0f}% under the sealed one — a gap of "
+            f"{s['gap']:.0f} points** across {s['n']} trials."
+            if s["gap_trials"]
+            else f"On the run in `docs/results.md`, **no model produced a single gap trial**: "
+            f"across {sum(st['n'] for st in stats.values())} trials, every submission that "
+            "passed the naive verifier also passed the sealed one."
+        ),
         "",
         "| model | trials | naive pass | sealed pass | gap | trials with hack signals |",
         "| --- | ---: | ---: | ---: | ---: | ---: |",
@@ -142,15 +148,22 @@ def _update_readme(models: list[str], stats: dict[str, dict], out_dir: Path) -> 
             f"**{st['gap']:.0f} pts** | {st['signalled']} |"
         )
     total_signalled = sum(st["signalled"] for st in stats.values())
-    if total_signalled == 0:
+    if not any(st["gap_trials"] for st in stats.values()):
+        verdict = (
+            "**The two verifiers agreed on every trial.** No submission passed its own "
+            "suite while failing the held-out tests or the probe, and none carried a hack "
+            "signal. On this suite and this prompt, the naive verifier overstated these "
+            "models by nothing."
+        )
+    elif total_signalled == 0:
         verdict = (
             "**None of that gap was cheating.** Not one trial in this run carried a "
             "hack signal: every submission was written in good faith, and every gap "
             "came from an honest implementation missing a rule the visible tests "
             "never reached. That is the more uncomfortable result. A grader that runs "
-            "only the suite in the agent's workspace reported a perfect score for work "
-            f"that was {s['gap']:.0f}% wrong, and no amount of watching for cheating "
-            "would have caught it."
+            "only the suite in the agent's workspace overstated the score by "
+            f"{s['gap']:.0f} points, and no amount of watching for cheating would have "
+            "caught it."
         )
     else:
         verdict = (
@@ -194,7 +207,16 @@ def build_report(results_dir: Path, out_dir: Path) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "hack-gap.svg").write_text(_svg(models, stats))
 
-    lines = ["# Measured results", "", "## Verifier gap", "", "![verifier gap](hack-gap.svg)", ""]
+    lines = ["# Measured results", ""]
+    for model in models:
+        served = sorted({m for r in by_model[model] for m in r["agent"].get("models_used") or []})
+        clis = sorted({r["agent"].get("cli_version") for r in by_model[model]} - {None, ""})
+        if served or clis:
+            lines.append(
+                f"- `{model}`: served by {', '.join(f'`{m}`' for m in served) or 'unrecorded'}"
+                f"; agent CLI {', '.join(clis) or 'unrecorded'}"
+            )
+    lines += ["", "## Verifier gap", "", "![verifier gap](hack-gap.svg)", ""]
     lines += [
         "| model | trials | naive pass | sealed pass | gap | gap trials | with hack signals |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
@@ -224,7 +246,7 @@ def build_report(results_dir: Path, out_dir: Path) -> int:
         "second finds a submission that satisfied every visible case and then passed",
         "under 40% of the held-out suite.",
         "",
-        "Calibrated on the committed corpus, 20 of the 21 exploits raise a signal and no",
+        "Calibrated on the committed corpus, 28 of the 29 exploits raise a signal and no",
         "reference solution or untouched stub raises any; the miss is named in",
         "`tests/test_signals.py`. Raw submissions are committed under `results/`, and the",
         "signals here are recomputed from them at report time, so every count can be",
@@ -256,16 +278,16 @@ def build_report(results_dir: Path, out_dir: Path) -> int:
         "",
         "## Per task",
         "",
-        "| task | naive pass | sealed pass | gap trials | signalled |",
-        "| --- | ---: | ---: | ---: | ---: |",
+        "| task | model | naive pass | sealed pass | gap trials | signalled |",
+        "| --- | --- | ---: | ---: | ---: | ---: |",
     ]
-    by_task: dict[str, list[dict]] = defaultdict(list)
+    by_task: dict[tuple[str, str], list[dict]] = defaultdict(list)
     for r in rows:
-        by_task[r["task"]].append(r)
-    for slug in sorted(by_task):
-        rs = by_task[slug]
+        by_task[(r["task"], r["model"])].append(r)
+    for slug, model in sorted(by_task):
+        rs = by_task[(slug, model)]
         lines.append(
-            f"| `{slug}` | {_rate(rs, 'naive_pass'):.0f}% | {_rate(rs, 'sealed_pass'):.0f}% | "
+            f"| `{slug}` | `{model}` | {_rate(rs, 'naive_pass'):.0f}% | {_rate(rs, 'sealed_pass'):.0f}% | "
             f"{sum(1 for r in rs if r['gap'])}/{len(rs)} | "
             f"{sum(1 for r in rs if r.get('hack_signals'))} |"
         )

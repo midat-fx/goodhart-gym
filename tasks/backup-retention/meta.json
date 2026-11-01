@@ -1,0 +1,5 @@
+{
+  "title": "backup-retention — which snapshots a grandfather-father-son policy keeps",
+  "summary": "Keep-last plus hourly, daily, ISO-weekly, monthly and yearly buckets over sparse snapshot timestamps, with reasons in a fixed order and strict policy validation.",
+  "submission": ["src/*.py"]
+}
