@@ -161,7 +161,7 @@ a measurement.
 ## Quickstart
 
 ```bash
-python -m venv .venv && .venv/bin/pip install pytest
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m gg tasks          # what is in the suite
 .venv/bin/python -m gg invariants     # prove the corpus, no model calls
 make test PYTHON=.venv/bin/python     # both of the above, as CI runs them

@@ -6,7 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN python -m pip install --no-cache-dir pytest
+COPY requirements.txt .
+RUN python -m pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 

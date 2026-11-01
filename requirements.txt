@@ -1,0 +1,5 @@
+# The verifiers run pytest, and some invariant rows depend on how it behaves
+# (exit 0 when every test is skipped, conftest discovery, the summary line).
+# Pinned so the matrix only changes when this file does; see
+# .github/workflows/pytest-canary.yml for the job that watches newer releases.
+pytest==9.1.1
