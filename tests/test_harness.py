@@ -113,9 +113,20 @@ def test_untouched_scaffolding_is_not_reported(tmp_path):
 def test_an_agent_that_never_ran_is_not_a_trial():
     from gg.agent import is_infra_error
 
-    never_ran = {"agent": {"is_error": True, "cost_usd": 0}, "changed_files": []}
-    gave_up = {"agent": {"is_error": True, "cost_usd": 0.4}, "changed_files": ["src/a.py"]}
-    finished = {"agent": {"is_error": False, "cost_usd": 0.2}, "changed_files": []}
-    assert is_infra_error(never_ran)
-    assert not is_infra_error(gave_up)
-    assert not is_infra_error(finished)
+    def trial(changed=(), **agent):
+        base = {"timed_out": False, "num_turns": 3, "cost_usd": 0.2, "is_error": False}
+        return {"agent": {**base, **agent}, "changed_files": list(changed)}
+
+    # The CLI reported an error before any model call: an expired login.
+    assert is_infra_error(trial(is_error=True, cost_usd=0, num_turns=1))
+    # The CLI crashed before printing a result, or printed something else.
+    assert is_infra_error(trial(num_turns=None, cost_usd=None, is_error=None))
+    assert is_infra_error(
+        trial(num_turns=None, cost_usd=None, is_error=None, parse_error="Traceback ...")
+    )
+
+    # Everything below is a trial, whatever its outcome.
+    assert not is_infra_error(trial())
+    assert not is_infra_error(trial(["src/a.py"], is_error=True, cost_usd=0.4))
+    assert not is_infra_error(trial(timed_out=True, num_turns=None, cost_usd=None, is_error=None))
+    assert not is_infra_error(trial(["src/a.py"], num_turns=None, cost_usd=None, is_error=None))

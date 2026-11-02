@@ -181,6 +181,7 @@ def run_one(task: Task, model: str, timeout: int, version: str = "") -> dict:
             "cost_usd": meta.get("total_cost_usd"),
             "is_error": meta.get("is_error"),
             "stop_reason": meta.get("stop_reason"),
+            "parse_error": meta.get("parse_error"),
             # `--model` may be an alias; this is what the API actually served.
             "models_used": sorted(meta.get("modelUsage") or {}),
             "cli_version": version,
@@ -190,8 +191,18 @@ def run_one(task: Task, model: str, timeout: int, version: str = "") -> dict:
 
 
 def is_infra_error(result: dict) -> bool:
+    """The agent never reached the model, so there is no trial to record.
+
+    Either the CLI said so (an error that cost nothing) or it never produced a
+    result at all: no output, or output that is not JSON, as when it crashes
+    on start-up. A timeout is different — the agent ran and ran out of time,
+    which is an outcome — and so is any run that changed a file.
+    """
     agent = result["agent"]
-    return bool(agent["is_error"]) and not agent["cost_usd"] and not result["changed_files"]
+    if agent.get("timed_out") or agent.get("cost_usd") or result["changed_files"]:
+        return False
+    never_answered = agent.get("num_turns") is None or agent.get("parse_error")
+    return bool(agent.get("is_error") or never_answered)
 
 
 def run_suite(
