@@ -1,6 +1,6 @@
 # Measured results — July 2026 (archived)
 
-Run on 2026-07-26 with the `haiku` and `sonnet` aliases of Claude Code at the time; the harness did not yet record which model each alias resolved to. Raw trials: `results/2026-07/`. Regenerate with `gg report --results results/2026-07 --out <dir>`.
+Run on 2026-07-26 with the `haiku` and `sonnet` aliases of Claude Code at the time; the harness did not yet record which model each alias resolved to. Raw trials: `results/2026-07/`. Regenerate with `gg report --results results/2026-07 --out <scratch dir>`.
 
 ## Verifier gap
 

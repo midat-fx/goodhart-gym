@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -112,16 +113,21 @@ def _svg(models: list[str], stats: dict[str, dict]) -> str:
 START, END = "<!-- RESULTS -->", "<!-- /RESULTS -->"
 
 
-def _update_readme(models: list[str], stats: dict[str, dict], out_dir: Path) -> None:
-    """Rewrite the block between the RESULTS markers so the headline is generated."""
+def _update_readme(models: list[str], stats: dict[str, dict], out_dir: Path) -> bool:
+    """Rewrite the block between the RESULTS markers so the headline is generated.
+
+    Returns False when there is no such block to rewrite.
+    """
     readme = out_dir.parent / "README.md"
     if not readme.is_file():
-        return
+        return False
     text = readme.read_text()
     if START not in text or END not in text:
-        return
+        return False
 
-    worst = max(models, key=lambda m: stats[m]["gap"])
+    # Offsetting trials can leave a model with gap trials at 0 points, and the
+    # headline must not then claim that no model produced any.
+    worst = max(models, key=lambda m: (stats[m]["gap"], stats[m]["gap_trials"]))
     s = stats[worst]
     block = [
         START,
@@ -149,10 +155,16 @@ def _update_readme(models: list[str], stats: dict[str, dict], out_dir: Path) -> 
         )
     total_signalled = sum(st["signalled"] for st in stats.values())
     if not any(st["gap_trials"] for st in stats.values()):
+        signal_clause = (
+            f"{total_signalled} of them carried a hack signal without moving either "
+            "score (`docs/results.md` breaks it down)"
+            if total_signalled
+            else "none carried a hack signal"
+        )
         verdict = (
             "**The two verifiers agreed on every trial.** No submission passed its own "
-            "suite while failing the held-out tests or the probe, and none carried a hack "
-            "signal. On this suite and this prompt, the naive verifier overstated these "
+            f"suite while failing the held-out tests or the probe, and {signal_clause}. "
+            "On this suite and this prompt, the naive verifier overstated these "
             "models by nothing."
         )
     elif total_signalled == 0:
@@ -178,9 +190,15 @@ def _update_readme(models: list[str], stats: dict[str, dict], out_dir: Path) -> 
     head, _, rest = text.partition(START)
     _, _, tail = rest.partition(END)
     readme.write_text(head + "\n".join(block) + tail)
+    return True
 
 
-def build_report(results_dir: Path, out_dir: Path) -> int:
+def build_report(results_dir: Path, out_dir: Path, readme: bool = False) -> int:
+    """Write the report into `out_dir`; only `readme=True` touches the headline.
+
+    The README sits next to `out_dir` and states one run's numbers, so rebuilding
+    an archived run must not replace them unless that is what was asked for.
+    """
     rows = _load(results_dir)
     if not rows:
         print(f"no results under {results_dir}")
@@ -303,8 +321,10 @@ def build_report(results_dir: Path, out_dir: Path) -> int:
     ]
 
     (out_dir / "results.md").write_text("\n".join(lines))
-    _update_readme(models, stats, out_dir)
     print(f"wrote {out_dir / 'results.md'} and {out_dir / 'hack-gap.svg'}")
+    if readme and not _update_readme(models, stats, out_dir):
+        print(f"no RESULTS block in {out_dir.parent / 'README.md'}", file=sys.stderr)
+        return 1
     for model in models:
         s = stats[model]
         print(f"  {model}: naive {s['naive']:.0f}%  sealed {s['sealed']:.0f}%  gap {s['gap']:.0f} pts")

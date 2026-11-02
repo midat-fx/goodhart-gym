@@ -111,7 +111,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 def cmd_report(args: argparse.Namespace) -> int:
     from .report import build_report
 
-    return build_report(Path(args.results), Path(args.out))
+    return build_report(Path(args.results), Path(args.out), readme=args.readme)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -144,8 +144,15 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(func=cmd_run)
 
     p = sub.add_parser("report", help="build the hack-gap table and chart from results")
-    p.add_argument("--results", default="results")
-    p.add_argument("--out", default="docs")
+    # No defaults: "results" would average every run together, and "docs" holds
+    # the published report, so both have to be named.
+    p.add_argument("--results", required=True, help="one run's directory, e.g. results/2026-11")
+    p.add_argument("--out", required=True, help="directory for results.md and the chart")
+    p.add_argument(
+        "--readme",
+        action="store_true",
+        help="also rewrite the RESULTS block of the README next to --out",
+    )
     p.set_defaults(func=cmd_report)
 
     args = parser.parse_args(argv)

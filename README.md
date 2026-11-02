@@ -185,7 +185,7 @@ Run an agent across the suite and score it under both verifiers:
 
 ```bash
 .venv/bin/python -m gg run --model claude-haiku-5-5 --trials 2 --out results/2026-11
-.venv/bin/python -m gg report --results results/2026-11
+.venv/bin/python -m gg report --results results/2026-11 --out docs --readme
 ```
 
 ## Methodology
@@ -248,7 +248,7 @@ results/       one JSON per trial per run (results/2026-07, results/2026-11),
 tests/         tests for the harness, and calibration for the signal detector
 ```
 
-The Docker image runs the 141 harness tests before the 57-row invariant matrix.
+The Docker image runs the 154 harness tests before the 57-row invariant matrix.
 The runtime needs no network, clock, model API, or host-specific fixture.
 
 New tasks follow `docs/authoring.md`. A task is done when

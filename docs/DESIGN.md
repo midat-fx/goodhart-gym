@@ -47,10 +47,18 @@ full command goes into every result file.
 A number in the README can then be tied to the model that produced it.
 
 **Dated result folders.** `results/2026-07/` keeps the July trials byte-for-byte,
-and `results/2026-11/` holds the new ones. `gg report --results results/2026-07`
-still reproduces the archived table in `docs/results-2026-07.md` exactly. One
-directory per run means old and new numbers are never averaged together by
-accident.
+and `results/2026-11/` holds the new ones. `gg report --results results/2026-07
+--out <scratch dir>` still reproduces the headline table in
+`docs/results-2026-07.md` exactly. One directory per run means old and new
+numbers are never averaged together by accident, which is also why `gg report`
+has no default for `--results`.
+
+**The README headline changes only on request.** `gg report` rewrites the README
+block only with `--readme`. Before that flag, rebuilding the July run with
+`--out docs` would have replaced the November headline without a word. I chose
+the flag over recording a run date in the block and refusing older runs: it is
+less code, and an explicit flag still lets me regenerate any run on purpose.
+`--out docs` still overwrites `docs/results.md`, because that is what it asks for.
 
 **Same protocol, different trial counts.** Prompt, tool list, timeout, both
 verifiers and the per-trial record are unchanged. The budget was 60 agent runs:
