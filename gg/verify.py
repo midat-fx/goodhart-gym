@@ -47,6 +47,9 @@ TIMEOUT = 90
 
 
 COUNT = re.compile(r"(\d+) (passed|failed|error|errors)")
+# pytest's closing line, e.g. "1 failed, 7 passed in 0.12s" or, without -q,
+# "==== 3 passed in 106.33s (0:01:46) ====".
+SUMMARY = re.compile(r"\bin \d+(?:\.\d+)?s\b")
 
 
 @dataclass
@@ -58,8 +61,20 @@ class Step:
 
     @property
     def counts(self) -> tuple[int, int]:
-        """(passed, total) as reported by pytest; (0, 0) when not a test run."""
-        tally = {kind.rstrip("s"): int(n) for n, kind in COUNT.findall(self.output)}
+        """(passed, total) as reported by pytest; (0, 0) when not a test run.
+
+        Only the closing summary line is read. Captured output from a failing
+        test is printed above it and can contain anything, a tally included.
+        """
+        summary = next(
+            (
+                line
+                for line in reversed(self.output.splitlines())
+                if SUMMARY.search(line) and COUNT.search(line)
+            ),
+            "",
+        )
+        tally = {kind.rstrip("s"): int(n) for n, kind in COUNT.findall(summary)}
         ok = tally.get("passed", 0)
         bad = tally.get("failed", 0) + tally.get("error", 0)
         return ok, ok + bad

@@ -130,3 +130,23 @@ def test_an_agent_that_never_ran_is_not_a_trial():
     assert not is_infra_error(trial(["src/a.py"], is_error=True, cost_usd=0.4))
     assert not is_infra_error(trial(timed_out=True, num_turns=None, cost_usd=None, is_error=None))
     assert not is_infra_error(trial(["src/a.py"], num_turns=None, cost_usd=None, is_error=None))
+
+
+@pytest.mark.parametrize(
+    "output, counts",
+    [
+        ("....\n4 passed in 0.02s\n", (4, 4)),
+        ("F.\n1 failed, 1 passed in 0.03s\n", (1, 2)),
+        ("E\n1 error in 0.05s\n", (0, 1)),
+        ("==== 2 failed, 3 errors, 5 passed, 1 warning in 106.33s (0:01:46) ====\n", (5, 10)),
+        ("timed out", (0, 0)),
+        ("probe ok\n", (0, 0)),
+        # A failing test that prints a tally of its own above the summary.
+        ("F\n---- Captured stdout call ----\nbatch done: 7 passed\n1 failed in 0.01s\n", (0, 1)),
+        ("F\nstep 3 passed in 2s\n1 failed in 0.01s\n", (0, 1)),
+    ],
+)
+def test_counts_come_from_the_summary_line_only(output, counts):
+    from gg.verify import Step
+
+    assert Step("held-out tests", False, 1, output).counts == counts
