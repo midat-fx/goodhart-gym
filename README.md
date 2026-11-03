@@ -161,11 +161,15 @@ a measurement.
 ## Quickstart
 
 ```bash
-python -m venv .venv && .venv/bin/pip install -r requirements.txt
+make test                             # builds .venv from requirements.txt, then
+                                      # runs the harness tests and the matrix
 .venv/bin/python -m gg tasks          # what is in the suite
 .venv/bin/python -m gg invariants     # prove the corpus, no model calls
-make test PYTHON=.venv/bin/python     # both of the above, as CI runs them
 ```
+
+`make test` needs Python 3.11 or newer as `python3`; point it at another one
+with `BOOTSTRAP=python3.13`, or at an interpreter that already has the pinned
+pytest with `PYTHON=...`.
 
 Run the complete harness and invariant matrix in a clean container with no
 network access:
