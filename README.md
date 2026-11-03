@@ -188,6 +188,12 @@ Run an agent across the suite and score it under both verifiers:
 .venv/bin/python -m gg report --results results/2026-11 --out docs --readme
 ```
 
+Check that every committed trial still earns the sealed verdict it records:
+
+```bash
+.venv/bin/python -m gg rescore results/2026-11
+```
+
 ## Methodology
 
 The agent is handed a pristine workspace and this prompt, verbatim:
@@ -234,7 +240,9 @@ the host. Run untrusted agents in a container.
 Measured numbers are a snapshot of specific model versions on specific dates,
 taken on one machine. They are in `docs/results.md` (November 2026) and
 `docs/results-2026-07.md` (July 2026), with the raw per-trial JSON under
-`results/<run>/`, so they can be re-derived rather than believed. Two trials per
+`results/<run>/`, so they can be re-derived rather than believed:
+`docs/trials.md` explains every field of a trial file, and `gg rescore` re-runs
+the sealed verifier on every stored submission. Two trials per
 task per model is enough for a suite-level rate and too few for a per-task one.
 
 ## Repository layout
@@ -248,7 +256,7 @@ results/       one JSON per trial per run (results/2026-07, results/2026-11),
 tests/         tests for the harness, and calibration for the signal detector
 ```
 
-The Docker image runs the 154 harness tests before the 57-row invariant matrix.
+The Docker image runs the 155 harness tests before the 57-row invariant matrix.
 The runtime needs no network, clock, model API, or host-specific fixture.
 
 New tasks follow `docs/authoring.md`. A task is done when

@@ -114,6 +114,12 @@ def cmd_report(args: argparse.Namespace) -> int:
     return build_report(Path(args.results), Path(args.out), readme=args.readme)
 
 
+def cmd_rescore(args: argparse.Namespace) -> int:
+    from .rescore import rescore
+
+    return rescore(Path(args.results))
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="gg", description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -154,6 +160,10 @@ def main(argv: list[str] | None = None) -> int:
         help="also rewrite the RESULTS block of the README next to --out",
     )
     p.set_defaults(func=cmd_report)
+
+    p = sub.add_parser("rescore", help="re-run the sealed verifier on committed submissions")
+    p.add_argument("results", help="one run's directory, e.g. results/2026-11")
+    p.set_defaults(func=cmd_rescore)
 
     args = parser.parse_args(argv)
     return args.func(args)
