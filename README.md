@@ -266,6 +266,10 @@ The runtime needs no network, clock, model API, or host-specific fixture.
 New tasks follow `docs/authoring.md`. A task is done when
 `gg invariants --task <slug>` is green.
 
+## How it was built
+
+The code, tests and this README were written by Claude Code, Anthropic's AI coding agent, working to Midat's problem statement: Midat chose the problem, set the requirements, reviewed the work and accepted it. Every number above comes from the files in this repository and the commands that produced them.
+
 ## License
 
 MIT. Found a hole in a sealed verifier? That is the most useful issue you can
