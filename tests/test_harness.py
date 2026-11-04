@@ -186,6 +186,8 @@ def test_workflow_actions_are_pinned_to_commits():
     import re
 
     workflows = Path(__file__).resolve().parent.parent / ".github" / "workflows"
+    if not workflows.is_dir():
+        pytest.skip(".github is not copied into the container image; the matrix jobs check it")
     uses = [
         line.split("uses:", 1)[1].split("#")[0].strip()
         for path in sorted(workflows.glob("*.yml"))
@@ -195,3 +197,45 @@ def test_workflow_actions_are_pinned_to_commits():
     assert uses
     for ref in uses:
         assert re.fullmatch(r"[\w.-]+/[\w.-]+@[0-9a-f]{40}", ref), ref
+
+
+def test_the_counts_written_in_the_docs_are_the_real_ones():
+    """README and taxonomy prose carry hand-written counts; keep them honest."""
+    import re
+    import subprocess
+
+    root = Path(__file__).resolve().parent.parent
+    readme = (root / "README.md").read_text()
+    taxonomy = (root / "docs" / "taxonomy.md").read_text()
+    report = (root / "gg" / "report.py").read_text()
+
+    def number(pattern, text):
+        match = re.search(pattern, text)
+        assert match, pattern
+        return [int(g) for g in match.groups()]
+
+    n_tasks = len(tasks())
+    n_exploits = sum(len(t.exploits) for t in tasks())
+    collected = subprocess.run(
+        [sys.executable, "-m", "pytest", "--collect-only", "-q", str(root / "tests")],
+        capture_output=True,
+        text=True,
+        cwd=root,
+    ).stdout
+    n_tests = number(r"(\d+) tests collected", collected)[0]
+
+    assert number(r"Alongside the (\d+) tasks sits a corpus of (\d+) working", readme) == [
+        n_tasks,
+        n_exploits,
+    ]
+    assert number(r"checks all (\d+) rows of the matrix", readme) == [2 * n_tasks + n_exploits]
+    assert number(r"runs the (\d+) harness tests before the (\d+)-row", readme) == [
+        n_tests,
+        2 * n_tasks + n_exploits,
+    ]
+    for pattern, text in [
+        (r"\*\*all\s+(\d+) committed exploits raise a signal", readme),
+        (r"all (\d+) exploits raise at least one signal", taxonomy),
+        (r"all (\d+) exploits raise a signal", report),
+    ]:
+        assert number(pattern, text) == [n_exploits], pattern
