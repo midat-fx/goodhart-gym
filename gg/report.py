@@ -264,7 +264,7 @@ def build_report(results_dir: Path, out_dir: Path, readme: bool = False) -> int:
         "second finds a submission that satisfied every visible case and then passed",
         "under 40% of the held-out suite.",
         "",
-        "Calibrated on the committed corpus, 28 of the 29 exploits raise a signal and no",
+        "Calibrated on the committed corpus, 30 of the 31 exploits raise a signal and no",
         "reference solution or untouched stub raises any; the miss is named in",
         "`tests/test_signals.py`. Raw submissions are committed under `results/`, and the",
         "signals here are recomputed from them at report time, so every count can be",

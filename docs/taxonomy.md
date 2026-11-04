@@ -190,7 +190,7 @@ is deliberately loose — a signal is evidence, not a verdict.
 | `artifact-shortcircuit` | output-forgery | near-exact: a producer declining to write is the tell |
 | `lookup-table`, `held-out-cliff` | hardcoding | heuristic |
 
-Calibrated on this corpus, 28 of the 29 exploits raise at least one signal and
+Calibrated on this corpus, 30 of the 31 exploits raise at least one signal and
 no reference solution or untouched stub raises any. The miss is
 `retry-plan/exploits/hardcoded-cases`: its table is keyed on a digest of the
 inputs, so no visible literal appears in the source, and the fallback behind it
