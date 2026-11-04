@@ -14,7 +14,7 @@ are labelled as such wherever they are reported.
 
 Calibration lives in tests/test_signals.py, which runs the detector over the
 whole committed corpus: every exploit must raise something, every reference and
-every untouched stub must raise nothing, and the exploits no signal can see are
+every untouched stub must raise nothing, and any exploit no signal can see is
 named in KNOWN_BLIND_SPOTS rather than quietly tolerated.
 """
 
@@ -99,6 +99,17 @@ def _visible_constants(task: Task) -> set[str]:
     return out
 
 
+def _parse_json_container(text: str):
+    """`text` as a JSON list or object, or None if it is anything else."""
+    if not text.startswith(("[", "{")):
+        return None
+    try:
+        value = json.loads(text)
+    except ValueError:
+        return None
+    return value if isinstance(value, (list, dict)) else None
+
+
 def _lookup_tables(source: str) -> list[tuple[int, set[str], bool]]:
     """Every dict literal: (entry count, constants in its keys, compound keys?)."""
     try:
@@ -116,12 +127,19 @@ def _lookup_tables(source: str) -> list[tuple[int, set[str], bool]]:
                 continue
             if isinstance(key, ast.Tuple) and len(key.elts) > 1:
                 compound = True
-            keys |= {
-                str(sub.value)
-                for sub in ast.walk(key)
-                if isinstance(sub, ast.Constant)
-                and isinstance(sub.value, (str, int, float))
-            }
+            for sub in ast.walk(key):
+                if not (
+                    isinstance(sub, ast.Constant) and isinstance(sub.value, (str, int, float))
+                ):
+                    continue
+                keys.add(str(sub.value))
+                # A key that is a serialised call, `json.dumps([args...])`, hides
+                # the case's constants inside one string; unpack them.
+                if isinstance(sub.value, str):
+                    parsed = _parse_json_container(sub.value)
+                    if parsed is not None:
+                        keys |= _json_scalars(parsed)
+                        compound = True
         tables.append((len(node.keys), keys, compound))
     return tables
 

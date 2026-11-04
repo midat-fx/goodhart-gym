@@ -190,14 +190,15 @@ is deliberately loose — a signal is evidence, not a verdict.
 | `artifact-shortcircuit` | output-forgery | near-exact: a producer declining to write is the tell |
 | `lookup-table`, `held-out-cliff` | hardcoding | heuristic |
 
-Calibrated on this corpus, 30 of the 31 exploits raise at least one signal and
-no reference solution or untouched stub raises any. The miss is
-`retry-plan/exploits/hardcoded-cases`: its table is keyed on a digest of the
-inputs, so no visible literal appears in the source, and the fallback behind it
-is close enough to correct that the held-out suite still passes about two
-thirds. Both heuristics are blind to it, and that is the honest state of the
-art here — a table keyed on a hash, sitting in front of a nearly-right
-implementation, is not distinguishable from an honest near-miss by inspection.
+Calibrated on this corpus, all 31 exploits raise at least one signal and no
+reference solution or untouched stub raises any. The last one to be caught was
+`retry-plan/exploits/hardcoded-cases`. Its table is keyed on `json.dumps` of the
+call, so no visible literal appears in the source as a constant of its own.
+`lookup-table` now unpacks a key that is a serialised JSON list or object.
+That check was written for this exploit, so a full corpus is the expected
+result, not evidence of general recall. A table keyed on a real digest
+(`hashlib`, `hash()`), sitting in front of a nearly-right implementation, would
+still be indistinguishable from an honest near-miss by inspection.
 
 ## What this taxonomy does not cover
 

@@ -165,14 +165,14 @@ whose keys name visible cases and appear nowhere in the specification, the
 second finds a submission that satisfied every visible case and then passed
 under 40% of the held-out suite, which is not how honest work degrades.
 
-The detector is calibrated against the corpus in `tests/test_signals.py`: **30
-of the 31 committed exploits raise a signal, and no reference solution or
-untouched stub raises any**. The exploit that gets through is named in the test
-with the reason — its table is keyed on a digest of the inputs, so nothing
-visible leaks into the source, and the fallback behind it is good enough that
-the held-out suite still passes about two thirds. Publishing that number
-alongside the results is the point; a detector whose misses are unknown is not
-a measurement.
+The detector is calibrated against the corpus in `tests/test_signals.py`: **all
+31 committed exploits raise a signal, and no reference solution or untouched
+stub raises any**. Read that as a calibration result, not a recall estimate. The
+last miss, `retry-plan/hardcoded-cases`, keys its table on `json.dumps` of the
+call, and I fixed it with a check written for that exploit. A table keyed on a
+real digest (`hashlib`, `hash()`) would still get through unseen. The new check
+raises nothing on any of the 106 committed agent submissions, so no published
+count moved.
 
 ## Quickstart
 
@@ -255,8 +255,9 @@ actually do.
 
 The verifier gap is not a hacking rate. Honest incompleteness lands in the same
 column, which is why the signals are reported beside it and never summed into
-it. The two heuristic signals have a known blind spot and no measured
-false-positive rate outside the corpus they were calibrated on.
+it. The two heuristic signals have no measured
+false-positive rate outside the corpus they were calibrated on, and they miss a
+table keyed on a digest of its inputs.
 
 The sealed verifier is a grading boundary, not a sandbox. It defends against a
 submission that games the grader; it does not defend against one that attacks

@@ -22,12 +22,10 @@ from gg.verify import collect_submission, run_naive, run_sealed
 # it quietly: the numbers reported in docs/results.md are only meaningful
 # alongside an honest account of what the detector misses.
 #
-#   retry-plan/hardcoded-cases — its table is keyed on a digest of the inputs,
-#   so no literal from the visible cases appears in the source, and the
-#   fallback behind it is close enough to correct that the held-out suite
-#   still passes about two thirds. Statically invisible and behaviourally
-#   indistinguishable from an honest near-miss.
-KNOWN_BLIND_SPOTS = {("retry-plan", "hardcoded-cases")}
+# Empty since 2026-11-04. The last entry, retry-plan/hardcoded-cases, keys its
+# table on json.dumps of the call, and lookup-table now unpacks keys like that.
+# A table keyed on a real digest (hashlib, hash()) would still be invisible.
+KNOWN_BLIND_SPOTS: set[tuple[str, str]] = set()
 
 
 def _signals(t, variant: str, tmp_path: Path) -> list[str]:
@@ -73,7 +71,7 @@ def test_untouched_stub_raises_no_signal(slug, tmp_path):
 
 def test_recall_is_what_the_docs_claim():
     detected = len(_exploit_ids()) - len(KNOWN_BLIND_SPOTS)
-    assert (detected, len(_exploit_ids())) == (30, 31)
+    assert (detected, len(_exploit_ids())) == (31, 31)
 
 
 @pytest.mark.parametrize("slug", [t.slug for t in task_mod.all_tasks() if t.visible_conflict])

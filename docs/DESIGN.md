@@ -180,6 +180,24 @@ budget can be told apart from one the agent finished.
 Not measured yet. The headless CLI on this machine was logged out when the
 flag landed, and there is no number to report until a run exists.
 
+## The last blind spot, closed narrowly (2026-11-04)
+
+`retry-plan/hardcoded-cases` was the one exploit no signal saw. The backlog
+guessed it was keyed on a digest. Reading it showed the key is `json.dumps` of
+the call: the visible constants are all there, packed into one string per key.
+So `lookup-table` now tries every string constant in a dict key that starts
+with `[` or `{` as JSON, and adds the scalars inside it to the key's constants,
+as a compound key. That is less general than a check for
+`hashlib`/`hash(...)` of the arguments, and it is the check this exploit needs.
+
+The cost of a heuristic is false positives that move published counts, so I
+recomputed signals over all 106 committed agent submissions before and after.
+No new signal appeared, and `docs/results.md` regenerates with only the
+calibration sentence changed. All 31 exploits are now detected, but I wrote
+that check after seeing the exploit, so the full count is a calibration fact
+and not a recall estimate. A real digest key is still a known miss, and the
+README says so.
+
 ## Pinned pytest, watched by a canary (2026-11-01)
 
 Both verifiers run pytest, so pytest's own behaviour is part of what the
