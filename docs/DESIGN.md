@@ -198,6 +198,18 @@ that check after seeing the exploit, so the full count is a calibration fact
 and not a recall estimate. A real digest key is still a known miss, and the
 README says so.
 
+## CI pinned to commits and to Ubuntu 24.04 (2026-11-04)
+
+The workflows name `actions/checkout` and `actions/setup-python` by commit SHA,
+with the release in a comment (v7.0.1 and v7.0.0, both on Node 24; v4 and v5
+were on the deprecated Node 20). A tag can be moved to other code; a SHA
+cannot. `tests/test_harness.py` fails if a `uses:` line names anything else.
+The invariant matrix and the container job run on `ubuntu-24.04` instead of
+`ubuntu-latest`, which moves to Ubuntu 26 from 2026-10-19. The weekly pytest
+canary stays on `ubuntu-latest`, so a runner image change shows up there
+first, the same way a new pytest does. macOS stays on `macos-latest`: it is
+one job, and pinning it would only defer the same question.
+
 ## Pinned pytest, watched by a canary (2026-11-01)
 
 Both verifiers run pytest, so pytest's own behaviour is part of what the

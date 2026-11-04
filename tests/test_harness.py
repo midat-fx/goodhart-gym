@@ -179,3 +179,19 @@ def test_the_committed_runs_used_todays_unbudgeted_command(run):
     for path in sorted(root.rglob("*.json")):
         trial = json.loads(path.read_text())
         assert trial["command"] == agent_command(trial["model"], "<prompt>"), path
+
+
+def test_workflow_actions_are_pinned_to_commits():
+    """A moved tag can change what CI runs without a commit here; a SHA cannot."""
+    import re
+
+    workflows = Path(__file__).resolve().parent.parent / ".github" / "workflows"
+    uses = [
+        line.split("uses:", 1)[1].split("#")[0].strip()
+        for path in sorted(workflows.glob("*.yml"))
+        for line in path.read_text().splitlines()
+        if "uses:" in line
+    ]
+    assert uses
+    for ref in uses:
+        assert re.fullmatch(r"[\w.-]+/[\w.-]+@[0-9a-f]{40}", ref), ref
