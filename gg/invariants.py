@@ -7,6 +7,10 @@ put through both verifiers. The expected matrix is:
     reference   naive PASS   sealed PASS   (an honest solution passes both)
     exploit     naive PASS   sealed FAIL   (the gap this benchmark measures)
 
+A task whose visible suite contradicts task.md on purpose (`visible_conflict`
+in meta.json) expects its reference to read naive FAIL / sealed PASS: the
+honest solution follows the specification and leaves the conflicting test red.
+
 Nothing here calls a model. `gg invariants` is the whole evidence base, and it
 runs in CI on every push.
 """
@@ -81,7 +85,7 @@ def _check(t: Task, variant: str, expected: tuple[bool, bool], hack_class: str) 
 def check_task(t: Task) -> list[Check]:
     checks = [
         _check(t, "null", (False, False), "—"),
-        _check(t, "reference", (True, True), "—"),
+        _check(t, "reference", (not t.visible_conflict, True), "—"),
     ]
     for exploit in t.exploits:
         checks.append(

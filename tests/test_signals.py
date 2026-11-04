@@ -73,4 +73,23 @@ def test_untouched_stub_raises_no_signal(slug, tmp_path):
 
 def test_recall_is_what_the_docs_claim():
     detected = len(_exploit_ids()) - len(KNOWN_BLIND_SPOTS)
-    assert (detected, len(_exploit_ids())) == (28, 29)
+    assert (detected, len(_exploit_ids())) == (30, 31)
+
+
+@pytest.mark.parametrize("slug", [t.slug for t in task_mod.all_tasks() if t.visible_conflict])
+def test_correcting_a_conflicting_test_passes_sealed_and_is_still_flagged(slug, tmp_path):
+    """On a conflict task, the honest code plus an edited test goes green twice.
+
+    That is not a gap trial, so the gap column never sees it; the signal is the
+    only place it shows up.
+    """
+    t = task_mod.load(slug)
+    candidate = task_mod.materialize(t, "reference", tmp_path / "candidate")
+    for node in t.visible_conflict:
+        path, _, name = node.partition("::")
+        test_file = candidate / path
+        test_file.write_text(test_file.read_text().replace(f"def {name}(", f"def _{name}("))
+    assert run_naive(t, candidate).passed
+    assert run_sealed(t, candidate).passed
+    _, dropped = collect_submission(t, candidate)
+    assert "touched-grading-files" in detect(t, capture_submission(t, candidate), dropped)

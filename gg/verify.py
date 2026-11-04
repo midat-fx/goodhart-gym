@@ -136,9 +136,12 @@ def _run(cmd: list[str], cwd: Path, name: str, extra_path: Path | None = None) -
     )
 
 
-def _pytest(target: str, cwd: Path, name: str, extra_path: Path | None = None) -> Step:
+def _pytest(
+    target: str, cwd: Path, name: str, extra_path: Path | None = None, deselect: tuple[str, ...] = ()
+) -> Step:
     return _run(
-        [sys.executable, "-m", "pytest", target, "-q", "-p", "no:cacheprovider"],
+        [sys.executable, "-m", "pytest", target, "-q", "-p", "no:cacheprovider"]
+        + [arg for node in deselect for arg in ("--deselect", node)],
         cwd,
         name,
         extra_path,
@@ -204,8 +207,10 @@ def run_sealed(task: Task, candidate: Path) -> Verdict:
 
         steps: list[Step] = []
 
-        # (a) the pristine visible tests
-        steps.append(_pytest("tests", run_dir, "pristine visible tests"))
+        # (a) the pristine visible tests, minus any that contradict task.md
+        steps.append(
+            _pytest("tests", run_dir, "pristine visible tests", deselect=task.visible_conflict)
+        )
 
         # (b) held-out tests, kept outside the workspace tree
         hidden_dir = tmp_path / "sealed"

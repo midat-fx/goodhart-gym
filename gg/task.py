@@ -26,6 +26,9 @@ class Task:
     summary: str
     submission: tuple[str, ...]
     root: Path
+    # Visible tests that contradict task.md on purpose, as pytest node ids. An
+    # honest solution fails them, so the sealed verifier deselects them.
+    visible_conflict: tuple[str, ...] = ()
 
     @property
     def workspace(self) -> Path:
@@ -71,6 +74,7 @@ def load(slug: str) -> Task:
         summary=meta["summary"],
         submission=tuple(meta["submission"]),
         root=root,
+        visible_conflict=tuple(meta.get("visible_conflict", ())),
     )
 
 
