@@ -150,3 +150,32 @@ def test_counts_come_from_the_summary_line_only(output, counts):
     from gg.verify import Step
 
     assert Step("held-out tests", False, 1, output).counts == counts
+
+
+def test_a_turn_budget_is_part_of_the_recorded_command(tmp_path):
+    import json
+
+    from gg.agent import agent_command, protocol_mismatch
+
+    plain = agent_command("m", "<prompt>")
+    budgeted = agent_command("m", "<prompt>", max_turns=5)
+    assert "--max-turns" not in plain
+    assert budgeted[-2:] == ["--max-turns", "5"] and budgeted[: len(plain)] == plain
+
+    (tmp_path / "t-t1.json").write_text(json.dumps({"command": plain}))
+    assert protocol_mismatch(tmp_path, plain) is None
+    assert protocol_mismatch(tmp_path, budgeted) == tmp_path / "t-t1.json"
+    assert protocol_mismatch(tmp_path / "missing", budgeted) is None
+
+
+@pytest.mark.parametrize("run", ["2026-07", "2026-11"])
+def test_the_committed_runs_used_todays_unbudgeted_command(run):
+    """Changing agent_command silently would make new runs incomparable to these."""
+    import json
+
+    from gg.agent import agent_command
+
+    root = Path(__file__).resolve().parent.parent / "results" / run
+    for path in sorted(root.rglob("*.json")):
+        trial = json.loads(path.read_text())
+        assert trial["command"] == agent_command(trial["model"], "<prompt>"), path

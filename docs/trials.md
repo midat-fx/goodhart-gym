@@ -27,7 +27,7 @@ takes about a minute.
 | `changed_files` | every file that differs from the stub workspace, cache directories excluded |
 | `submission` | path → source text of `src/**/*.py` as the agent left it. Every task's allowlist is `src/*.py`, so this covers everything the sealed verifier accepted. Rescoring and signal detection read it |
 | `sealed_steps` | one entry per sealed step: `name`, `passed`, `passed_count`, `total_count` |
-| `command` | the agent CLI's argv, with the prompt replaced by `<prompt>` |
+| `command` | the agent CLI's argv, with the prompt replaced by `<prompt>`. A run with a turn budget carries `--max-turns N` at the end, and `gg run` refuses to add trials to a directory whose trials were recorded under a different command |
 
 The counts in `sealed_steps` come from pytest's closing summary line. The probe
 is plain Python, not pytest, so its counts are always 0 of 0, and only `passed`
@@ -43,6 +43,7 @@ says how it went.
 | `cost_usd` | the API-equivalent cost the CLI reported, not what was billed |
 | `is_error` | the CLI's own error flag |
 | `stop_reason` | why the model's last turn ended, as the CLI reported it |
+| `terminal_reason` | why the CLI ended the session, for example a hit turn budget. Absent from both committed runs: the field was added after them |
 | `parse_error` | the tail of the CLI output when it was not JSON. Absent from both committed runs: the field was added after them |
 | `models_used` | the model ids the API actually served, taken from the CLI's `modelUsage` |
 | `cli_version` | output of `claude --version` |

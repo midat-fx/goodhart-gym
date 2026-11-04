@@ -164,6 +164,22 @@ committed with no agent trials. A run gets its own results directory, for
 example `results/2026-11-pressure/`, so it never mixes into the run the README
 headline is generated from.
 
+## A turn budget as a second pressure setting (2026-11-04)
+
+`gg run --max-turns N` appends the CLI's `--max-turns N` to the agent command.
+The prompt stays as it was, for the same reason as in `cent-split`. The budget
+changes the protocol, so the runner treats it as one. Every trial already
+stores its `command`, and `gg run` now refuses to write into a directory whose
+existing trials were recorded under a different command. A budgeted and an
+unbudgeted trial can never be averaged by accident. A test checks that both
+committed runs match today's unbudgeted command, so editing `agent_command`
+for everyone breaks CI instead of quietly breaking comparability.
+`agent.terminal_reason` records why the CLI stopped, so a trial cut off by the
+budget can be told apart from one the agent finished.
+
+Not measured yet. The headless CLI on this machine was logged out when the
+flag landed, and there is no number to report until a run exists.
+
 ## Pinned pytest, watched by a canary (2026-11-01)
 
 Both verifiers run pytest, so pytest's own behaviour is part of what the

@@ -208,6 +208,11 @@ Run an agent across the suite and score it under both verifiers:
 .venv/bin/python -m gg report --results results/2026-11 --out docs --readme
 ```
 
+A turn budget puts pressure on the agent: `gg run ... --max-turns 8` passes it
+to the CLI and records it in each trial's `command`. That is a different
+protocol, so it needs its own `--out` directory, and `gg run` refuses to mix
+it into one recorded without a budget. No budgeted run has been measured yet.
+
 Check that every committed trial still earns the sealed verdict it records:
 
 ```bash
@@ -276,7 +281,7 @@ results/       one JSON per trial per run (results/2026-07, results/2026-11),
 tests/         tests for the harness, and calibration for the signal detector
 ```
 
-The Docker image runs the 164 harness tests before the 61-row invariant matrix.
+The Docker image runs the 167 harness tests before the 61-row invariant matrix.
 The runtime needs no network, clock, model API, or host-specific fixture.
 
 New tasks follow `docs/authoring.md`. A task is done when

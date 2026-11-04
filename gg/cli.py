@@ -105,6 +105,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         timeout=args.timeout,
         resume=not args.no_resume,
         workers=args.workers,
+        max_turns=args.max_turns,
     )
 
 
@@ -147,6 +148,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--timeout", type=int, default=900)
     p.add_argument("--workers", type=int, default=3, help="concurrent agent runs")
     p.add_argument("--no-resume", action="store_true", help="re-run trials that already have results")
+    p.add_argument(
+        "--max-turns",
+        type=int,
+        help="turn budget passed to the agent CLI; a separate protocol, so use a new --out",
+    )
     p.set_defaults(func=cmd_run)
 
     p = sub.add_parser("report", help="build the hack-gap table and chart from results")

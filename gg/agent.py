@@ -39,7 +39,10 @@ with `python -m pytest tests`. Your work is finished when the task is complete.
 AGENT_TOOLS = "Read Write Edit Bash Glob Grep"
 
 
-def agent_command(model: str, prompt: str) -> list[str]:
+def agent_command(model: str, prompt: str, max_turns: int | None = None) -> list[str]:
+    # A turn budget is a different protocol, not a tweak: it is recorded in the
+    # trial's `command`, and run_suite refuses to mix it with unbudgeted trials.
+    budget = ["--max-turns", str(max_turns)] if max_turns else []
     return [
         "claude",
         "-p",
@@ -56,6 +59,7 @@ def agent_command(model: str, prompt: str) -> list[str]:
         "--strict-mcp-config",
         "--setting-sources",
         "",
+        *budget,
     ]
 
 
@@ -110,11 +114,13 @@ def cli_version() -> str:
         return ""
 
 
-def run_one(task: Task, model: str, timeout: int, version: str = "") -> dict:
+def run_one(
+    task: Task, model: str, timeout: int, version: str = "", max_turns: int | None = None
+) -> dict:
     with tempfile.TemporaryDirectory(prefix=f"gg-agent-{task.slug}-") as tmp:
         workspace = task_mod.materialize(task, "null", Path(tmp) / "workspace")
         prompt = PROMPT_TEMPLATE.format(cwd=workspace, task=task.prompt)
-        cmd = agent_command(model, prompt)
+        cmd = agent_command(model, prompt, max_turns)
 
         started = time.time()
         raw, timed_out = _run_agent(cmd, workspace, timeout)
@@ -181,6 +187,8 @@ def run_one(task: Task, model: str, timeout: int, version: str = "") -> dict:
             "cost_usd": meta.get("total_cost_usd"),
             "is_error": meta.get("is_error"),
             "stop_reason": meta.get("stop_reason"),
+            # Why the CLI ended the session, e.g. a hit turn budget.
+            "terminal_reason": meta.get("terminal_reason"),
             "parse_error": meta.get("parse_error"),
             # `--model` may be an alias; this is what the API actually served.
             "models_used": sorted(meta.get("modelUsage") or {}),
@@ -205,6 +213,18 @@ def is_infra_error(result: dict) -> bool:
     return bool(agent.get("is_error") or never_answered)
 
 
+def protocol_mismatch(model_dir: Path, command: list[str]) -> Path | None:
+    """The first trial in `model_dir` recorded under a different command, if any.
+
+    One directory is one protocol: averaging budgeted and unbudgeted trials, or
+    two CLI flag sets, would produce a number neither protocol measured.
+    """
+    for path in sorted(model_dir.glob("*.json")):
+        if json.loads(path.read_text()).get("command") != command:
+            return path
+    return None
+
+
 def run_suite(
     model: str,
     slugs: list[str] | None,
@@ -213,6 +233,7 @@ def run_suite(
     timeout: int,
     resume: bool,
     workers: int = 3,
+    max_turns: int | None = None,
 ) -> int:
     if shutil.which("claude") is None:
         print("claude CLI not found on PATH", file=sys.stderr)
@@ -220,6 +241,13 @@ def run_suite(
 
     tasks = [task_mod.load(s) for s in slugs] if slugs else task_mod.all_tasks()
     model_dir = out_dir / model.replace("/", "_")
+    mixed = protocol_mismatch(model_dir, agent_command(model, "<prompt>", max_turns))
+    if mixed:
+        print(
+            f"{mixed} was run with a different command; use a new --out directory",
+            file=sys.stderr,
+        )
+        return 1
     model_dir.mkdir(parents=True, exist_ok=True)
 
     pending = []
@@ -236,7 +264,7 @@ def run_suite(
 
     def work(item):
         t, trial, path = item
-        result = run_one(t, model, timeout, version)
+        result = run_one(t, model, timeout, version, max_turns)
         result["trial"] = trial
         # An error that cost nothing never reached the model (auth, network,
         # bad model id). It is not a trial; leave it unrecorded so --resume
