@@ -282,7 +282,7 @@ results/       one JSON per trial per run (results/2026-07, results/2026-11),
 tests/         tests for the harness, and calibration for the signal detector
 ```
 
-The Docker image runs the 168 harness tests before the 61-row invariant matrix.
+The Docker image runs the 169 harness tests before the 61-row invariant matrix.
 The runtime needs no network, clock, model API, or host-specific fixture.
 
 New tasks follow `docs/authoring.md`. A task is done when

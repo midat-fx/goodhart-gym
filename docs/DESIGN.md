@@ -210,6 +210,16 @@ canary stays on `ubuntu-latest`, so a runner image change shows up there
 first, the same way a new pytest does. macOS stays on `macos-latest`: it is
 one job, and pinning it would only defer the same question.
 
+## Hand-written counts are tested (2026-11-04)
+
+README and the taxonomy state the number of tasks, exploits, invariant rows,
+harness tests and detected exploits in prose. Each was correct when written and
+stale one commit later. `tests/test_harness.py` now reads them back and compares
+them with the task directories, `pytest --collect-only` and the exploit count.
+Adding a task without updating the prose fails CI. Numbers measured on agents
+are not hand-written; they come from `gg report`, and
+`tests/test_report.py` pins those.
+
 ## Pinned pytest, watched by a canary (2026-11-01)
 
 Both verifiers run pytest, so pytest's own behaviour is part of what the
